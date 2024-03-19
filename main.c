@@ -39,22 +39,29 @@ int shipRight[][];
 int shipUpRight[][];
 
 int titleScreen[][]; // buffer to hold title screen image
-int mapLayout[][][];   //buffer to hold the map layout aka obstacles
-                       // index one for which map layout we're using,
-                       // second & third for obstacle coordinates
+int mapLayout[][][]; // buffer to hold the map layout aka obstacles
+                     //  index one for which map layout we're using,
+                     //  second & third for obstacle coordinates
 int gameState = 0;
-int currentMap = 0;     // by default, use the first map layout
+int currentMap = 0; // by default, use the first map layout
+
+int direction_P1[4]; // arrays to hold current player movement inputs
+int direction_P2[4]; // up down left right in THAT ORDER
+                     // 0  1    2    3
+                     // Put these as a member of the spaceship struct? $$$$$$$
 #define TITLE_SCREEN 0
 #define IN_GAME 1
 #define WINNER_A 2
 #define WINNER_B 3
 
 void eraseShips(ship *shipA, ship *shipB);
-void eraseOldBullets( bullet *bulletArray);
-void handleCollisions(bullet* bulletArray, int**** mapLayout, ship* shipA, ship* shipB, int currentMap);
-void checkWinner(ship *shipA, ship* shipB);
-ship *shipA; ship *shipB;   //ship pointers
-bullet bulletArray[];   //array to keep track of all bullet objects
+void eraseOldBullets(bullet *bulletArray);
+void handleCollisions(bullet *bulletArray, int ****mapLayout, ship *shipA, ship *shipB, int currentMap);
+void checkWinner(ship *shipA, ship *shipB);
+void updateShips(ship *shipA, ship *shipB, int* direction_P1, int* direction_P2);
+ship *shipA;
+ship *shipB;          // ship pointers
+bullet bulletArray[]; // array to keep track of all bullet objects
 
 int main()
 {
@@ -68,7 +75,7 @@ int main()
     { // gameplay while loop
         // hi
 
-        eraseShips(shipA, shipB); // erase previous spaceships
+        eraseShips(shipA, shipB);     // erase previous spaceships
         eraseOldBullets(bulletArray); // erase previous bullets
 
         // handle bullet collisions (obstacles, or spaceship) + bullet deletion
@@ -76,11 +83,15 @@ int main()
         // update spaceship health
 
         checkWinner(shipA, shipB); // check for winner; if health = 0, clear screen, switch states
-        // grab user input (do they wanna move, do they wanna shoot)
-        // if user can, and wants to shoot, spawn a bullet
-        // queue shooting sound
+
+        // poll user input (direction array, do they wanna shoot)
         // update ship locations & orientations
         // check ship collisions
+        updateShips(shipA, shipB, direction_P1, direction_P2);
+
+        // if user can, and wants to shoot, spawn a bullet
+        // queue shooting sound
+
         // draw health bars, spaceships, bullets
     }
 
