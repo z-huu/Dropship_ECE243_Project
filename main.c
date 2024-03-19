@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "handleCollisions.c"
+
 #define RESOLUTION_X 320
 #define RESOLUTION_Y 240
 #define BULLET_SPEED 5 // subject to change
