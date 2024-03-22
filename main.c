@@ -14,8 +14,12 @@ typedef struct spaceship
     int orientationX;
     int orientationY;
     int health;
+
     bool canShoot;
-    bool wantShoot;
+    bool wantShoot; // maybe redundant
+
+    int movementDirection[4];       // the current user input
+    int shootDirection[4];
 
     int oldx;       // to store the two frame old data for deletion
     int oldy;
@@ -35,6 +39,9 @@ typedef struct projectile
     int oldy;
     int prevx;
     int prevy;
+
+    int endFrame;       // to keep track of when the bullet is deleted
+                        // so we can still delete the past 2 frames
 } bullet;
 
 // buffers to hold the different ship sprites.
@@ -58,6 +65,8 @@ int direction_P1[4]; // arrays to hold current player movement inputs
 int direction_P2[4]; // up down left right in THAT ORDER
                      // 0  1    2    3
                      // Put these as a member of the spaceship struct? $$$$$$$
+
+int frameCounter = 0;
 
 short int Buffer1[240][512]; // 240 rows, 320 columns + paddings
 short int Buffer2[240][512];
@@ -151,6 +160,7 @@ int main()
     {
         // hi
     }
+    frameCounter++;
 }
 
 void drawBullet(int x, int y) {
