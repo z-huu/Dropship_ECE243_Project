@@ -168,10 +168,10 @@ void handle_physics(int* x_box, int* y_box, int* dx, int* dy, int N, int speed,
 		}
 
 		// TO DO: ADD COLLISION CHECKS
-		if(x_box[k] + (speed * dx[k]))
+		if (x_box[k] + (speed * dx[k]))
 
-		// move point
-		x_box[k] += dx[k] * speed;
+			// move point
+			x_box[k] += dx[k] * speed;
 		y_box[k] += dy[k] * speed;
 	}
 }
