@@ -31,6 +31,11 @@ IDEAS FOR PHYSICS:
 - maybe have a physics struct, which has points to a large amount of physics based stuff
     - for example, has pointers to the space ships (in an array), array containing all the projectiles, and contains the collision mask as well
 
+CURRENT BUGS:
+- left and top boundaries cause weird slowing effect
+- similar slowing effect when colliding with intended collision hitbox
+- conclusion: collision detection in those scenarios is causing the player to move one unit
+- should probably double check how i am checking for collisions again
 *** *** ***
 */
 
@@ -78,15 +83,15 @@ void draw_box(int x, int y, int x_size, int y_size, short int color);
 // hitbox object, describes top left (x1, y1) and bottom right (x2, y2) corners,
 // rest can be determined implicitly TO DO: maybe add rotation value? can be
 // used to have angled corners/boxes
-struct hitbox {
+typedef struct hitbox {
 	unsigned int x1;
 	unsigned int y1;
 	unsigned int x2;
 	unsigned int y2;
-};
+} hitbox;
 
 const int hitbox_total = 1;
-short int collision_frame[240][320];
+bool collision_frame[320][240];
 
 // TIMER DECLARATION
 struct timer{
@@ -213,23 +218,70 @@ typedef struct spaceship
 #define ship_size 5
 #define frame_rate 60
 #define timer_frequency 100000000
-#define ship_speed 3
+#define ship_speed 2
+
+typedef struct physics_holder{
+    ship *ship_array;
+    int ship_num;
+    hitbox *hitbox_array;
+    int hitbox_num;
+};
+
 
 void handle_ship_physics(ship *player_ship){
     // check collisions of ship, stop movement in that direction if it will collide
     if(player_ship->x + ship_speed * player_ship->dx > x_min && 
-    player_ship->x + ship_speed * player_ship->dx < x_max - ship_size){
+    player_ship->x + ship_speed * player_ship->dx < x_max - ship_size - 1){
         // within bounds, move in X direction
-        player_ship->x = player_ship->x + ship_speed * player_ship->dx;
+        // fire vertical raycasts horizontally to the ship to determine horizontal collisions
+        // can increment by larger amounts to make less precise but faster
+        // left then right collision checks
+        int x_dist = 0;
+        bool x_collide = false;
+        for(x_dist = 0; x_dist <= ship_speed && x_collide == false; x_dist++){
+            for(int k = player_ship->y + 1; k < player_ship->y + ship_size - 1; k++){
+                if(collision_frame[player_ship->x + x_dist * player_ship->dx][k] ||
+                collision_frame[player_ship->x + x_dist * player_ship->dx + ship_size][k]
+                ){
+                    // collision!
+                    x_collide = true;
+                    //player_ship->x = player_ship->x - player_ship->dx;
+                }else{
+                    
+                }
+            }
+            //player_ship->x = player_ship->x + player_ship->dx;
+        }
+        player_ship->x = player_ship->x + (x_dist) * player_ship->dx;
     }
     
     if(player_ship->y + ship_speed * player_ship->dy > y_min &&
-    player_ship->y + ship_speed * player_ship->dy < y_max - ship_size){
+    player_ship->y + ship_speed * player_ship->dy < y_max - ship_size - 1){
         // within bounds, move in Y direction
-        player_ship->y = player_ship->y + ship_speed * player_ship->dy;
+        // fire horizontal raycasts vertically to determine horizontal collisions
+        // can increment by larger amounts to make less precise but faster
+        // left then right collision checks
+        int y_dist = 0;
+        bool y_collide = false;
+        for(y_dist = 0; y_dist <= ship_speed && y_collide == false; y_dist++){
+            for(int k = player_ship->x + 1; k < player_ship->x + ship_size - 1; k++){
+                if(collision_frame[k][player_ship->y + y_dist * player_ship->dy] ||
+                collision_frame[k][player_ship->y + y_dist * player_ship->dy + ship_size]
+                ){
+                    // collision!
+                    y_collide = true;
+                }else{
+                }
+            }
+            //player_ship->y = player_ship->y + y_dist * player_ship->dy;
+        }
+        player_ship->y = player_ship->y + (y_dist) * player_ship->dy;
     }
-    
 }
+#define x_min_threshold 5
+#define y_min_threshold 5
+#define x_max_threshold 315
+#define y_max_threshold 235
 
 int main(void){
     // VGA SET UP
@@ -284,11 +336,21 @@ int main(void){
 			 x_coord++) {
 			for (int y_coord = colliders[k].y1; y_coord < colliders[k].y2;
 				 y_coord++) {
-				collision_frame[x_coord][y_coord] = 1;
+				collision_frame[x_coord][y_coord] = true;
 			}
 		}
 	}
 
+    for(int k = 0; k < VGA_x; k++){
+        for(int j = 0; j < VGA_y; j++){
+            if(k < x_min_threshold || k > x_max_threshold){
+                collision_frame[k][j] = true;
+            }
+            if(j < y_min_threshold || j > y_max_threshold){
+                collision_frame[k][j] = true;
+            }
+        }
+    }
     int LED_Out = 0;
 
     // PLAYER 1 KEYBOARD SET UP
@@ -355,11 +417,6 @@ int main(void){
 
 		// erase old boxes
 		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
-        
-        draw_box(colliders[0].x1, colliders[0].y1, 
-                colliders[0].x2 - colliders[0].x1,
-                colliders[0].y2 - colliders[0].y1,
-                0);
 
 		// draw hitboxes
         for (int k = 0; k < hitbox_total; k++) {
@@ -367,7 +424,6 @@ int main(void){
 					 colliders[k].x2 - colliders[k].x1,
 					 colliders[k].y2 - colliders[k].y1, color_list[1]);
 		}
-        
 
         player1_ship.old_x = player1_ship.x;
         player1_ship.old_y = player1_ship.y;
@@ -375,7 +431,6 @@ int main(void){
 		// draw new boxes at shifted positions
         //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
 		draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
-
 
         // output data onto LEDS
         for(int k = 0; k < inputs_per_player; k++){
