@@ -119,7 +119,7 @@ static const int shipDownLeft[] = {
 
 int pixel_buffer_start;
 
-void draw_ship(int x, int y, int dx, int dy);
+void draw_ship(ship* player);
 
 void clear_screen();
 int counter = 0;
@@ -140,19 +140,22 @@ int main()
 
     // Set up a demo with a moveable ship.
     ship *playerOne = malloc(sizeof(ship));
-    playerOne->x = 0;
-    playerOne->y = 0;
+    playerOne->x = 50;
+    playerOne->y = 50;
     playerOne->dx = 0;
-    playerOne->dy = 0;
+    playerOne->dy = 1;
 
-    while (1) {
-        
-    }
+    draw_ship(playerOne);
 }
 
-void draw_ship(int x, int y, int dx, int dy)
+void draw_ship(ship* player)
 {
     // check dx and dy
+
+    int x = player->x;
+    int y = player->y;
+    int dx = player->dx;
+    int dy = player->dy;
 
     counter = 0;
 
