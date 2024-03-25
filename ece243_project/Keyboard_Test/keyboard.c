@@ -5,9 +5,10 @@
 *** *** ***
 MAIN TO DO LIST:
 
-- make code more easier to parse through
-    - namely, make the player_keyboard declarations a bit easier to work with
-- try to make it so the player controls are held in separate player keyboard objects?
+1: figure out how to implement keyboard with interrupts
+    - the main structure should be pretty similar, just with setting current input via the interrupt, and handling input during the interrupt
+
+2: try to make it so the player controls are held in separate player keyboard objects?
     - options are:
         A: use a single keyboard object, which will handle the entire keyboard space
             - in this case, the division between players will occur at the midpoint of the arrays
@@ -19,7 +20,10 @@ MAIN TO DO LIST:
             - would probably need a significant restructuring of how we poll for keyboard inputs
             - leaning away from this since im not sure how this would fit if i were to go with interrupts as well...
 
-- figure out how to make a simple box for our space ship
+3: figure out how to make a simple box for our space ship
+    - essentially, on a frame (1/60 s), we move the ship by speed*dx + speed*dy in x and y directions respectively
+    - would be good to use hex display numbers?
+    - maybe figure out how to display numbers on VGA? (may be overkill for just testing though)
     - will be used to test collisions and movement via keyboard
     - probably will be done in a separate project/C file to keep things a bit tidy
 *** *** ***
