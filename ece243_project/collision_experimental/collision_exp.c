@@ -219,6 +219,10 @@ typedef struct spaceship
 #define frame_rate 60
 #define timer_frequency 100000000
 #define ship_speed 2
+#define x_min_threshold 5
+#define y_min_threshold 5
+#define x_max_threshold 315
+#define y_max_threshold 235
 
 typedef struct physics_holder{
     ship *ship_array;
@@ -230,17 +234,68 @@ typedef struct physics_holder{
 
 void handle_ship_physics(ship *player_ship){
     // check collisions of ship, stop movement in that direction if it will collide
+    // new plan: x direction then y direction move and checks
+    
+    
+    if(player_ship->x + ship_speed * player_ship->dx > x_min_threshold 
+    && player_ship->x + ship_speed * player_ship->dx < x_max_threshold - ship_size - 1){
+        bool x_collide = false;
+        // x_c will be the distance we have travelled so far
+        for(int x_c = 0; 
+        x_c < ship_speed && !x_collide; 
+        x_c++){
+            // scan the ship's height, each horizontal pixel step
+            for(int y_c = player_ship->y; 
+            y_c < player_ship->y + ship_size; 
+            y_c++){
+                if(player_ship->x > x_min_threshold
+                && player_ship->x < x_max_threshold
+                && collision_frame[player_ship->x + (player_ship->dx)][y_c]){
+                    x_collide = true;
+                    player_ship->x -= player_ship->dx;
+                }
+            }
+            player_ship->x += player_ship->dx;
+        }
+    }
+
+    if(player_ship->y + ship_speed * player_ship->dy > y_min_threshold 
+    && player_ship->y + ship_speed * player_ship->dy < y_max_threshold - ship_size - 1){
+        bool y_collide = false;
+        // y_c will be the distance we have travelled so far
+        for(int y_c = 0; 
+        y_c < ship_speed && !y_collide; 
+        y_c++){
+            // scan the ship's length, each vertical pixel step
+            for(int x_c = player_ship->x; 
+            x_c < player_ship->x + ship_size; 
+            x_c++){
+                if(player_ship->y > y_min_threshold
+                && player_ship->y < y_max_threshold
+                && collision_frame[x_c][player_ship->y + (player_ship->dy)]){
+                    y_collide = true;
+                    player_ship->y -= player_ship->dy;
+                }
+            }
+            player_ship->y += player_ship->dy;
+        }
+    }
+    /*
     if(player_ship->x + ship_speed * player_ship->dx > x_min && 
     player_ship->x + ship_speed * player_ship->dx < x_max - ship_size - 1){
         // within bounds, move in X direction
         // fire vertical raycasts horizontally to the ship to determine horizontal collisions
         // can increment by larger amounts to make less precise but faster
         // left then right collision checks
+
+        
         int x_dist = 0;
         bool x_collide = false;
         for(x_dist = 0; x_dist <= ship_speed && x_collide == false; x_dist++){
             for(int k = player_ship->y + 1; k < player_ship->y + ship_size - 1; k++){
-                if(collision_frame[player_ship->x + x_dist * player_ship->dx][k] ||
+                if(player_ship->x + x_dist * player_ship->dx < x_min_threshold || 
+                player_ship->x + x_dist * player_ship->dx > x_max_threshold ||
+                collision_frame[player_ship->x + x_dist * player_ship->dx][k] ||
                 collision_frame[player_ship->x + x_dist * player_ship->dx + ship_size][k]
                 ){
                     // collision!
@@ -250,9 +305,9 @@ void handle_ship_physics(ship *player_ship){
                     
                 }
             }
-            //player_ship->x = player_ship->x + player_ship->dx;
+            player_ship->x = player_ship->x + player_ship->dx;
         }
-        player_ship->x = player_ship->x + (x_dist) * player_ship->dx;
+        //player_ship->x = player_ship->x + (x_dist) * player_ship->dx;
     }
     
     if(player_ship->y + ship_speed * player_ship->dy > y_min &&
@@ -265,7 +320,9 @@ void handle_ship_physics(ship *player_ship){
         bool y_collide = false;
         for(y_dist = 0; y_dist <= ship_speed && y_collide == false; y_dist++){
             for(int k = player_ship->x + 1; k < player_ship->x + ship_size - 1; k++){
-                if(collision_frame[k][player_ship->y + y_dist * player_ship->dy] ||
+                if(player_ship->y + y_dist * player_ship->dx < y_min_threshold ||
+                player_ship->y + y_dist * player_ship->dx > y_max_threshold ||
+                collision_frame[k][player_ship->y + y_dist * player_ship->dy] ||
                 collision_frame[k][player_ship->y + y_dist * player_ship->dy + ship_size]
                 ){
                     // collision!
@@ -273,15 +330,13 @@ void handle_ship_physics(ship *player_ship){
                 }else{
                 }
             }
-            //player_ship->y = player_ship->y + y_dist * player_ship->dy;
+            player_ship->y = player_ship->y + player_ship->dy;
         }
-        player_ship->y = player_ship->y + (y_dist) * player_ship->dy;
+        //player_ship->y = player_ship->y + (y_dist) * player_ship->dy;
     }
+    */
 }
-#define x_min_threshold 5
-#define y_min_threshold 5
-#define x_max_threshold 315
-#define y_max_threshold 235
+
 
 int main(void){
     // VGA SET UP
