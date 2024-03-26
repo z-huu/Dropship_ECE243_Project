@@ -45,14 +45,7 @@ typedef struct projectile
 } bullet;
 
 // buffers to hold the different ship sprites.
-int shipUp[][];
-int shipUpLeft[][];
-int shipLeft[][];
-int shipDownLeft[][];
-int shipDown[][];
-int shipDownRight[][];
-int shipRight[][];
-int shipUpRight[][];
+    // In spriteTest.c 
 
 int titleScreen[][]; // buffer to hold title screen image
 int mapLayout[][][]; // buffer to hold the map layout aka obstacles
@@ -87,7 +80,7 @@ short int Buffer2[240][512];
 #define CHAR_BUF_CTRL_BASE 0xFF203030
 
 void eraseShips(ship *shipA, ship *shipB);
-void eraseOldBullets(bullet *bulletArray);
+void eraseOldBullets(bullet **bulletArray);
 void handleCollisions(bullet *bulletArray, int ****mapLayout, ship *shipA, ship *shipB, int currentMap);
 void checkWinner(ship *shipA, ship *shipB);
 void updateShips(ship *shipA, ship *shipB, int* direction_P1, int* direction_P2);
@@ -164,6 +157,6 @@ int main()
 }
 
 void drawBullet(int x, int y) {
-    // implement this circle drawing algorithm
-    // https://uomustansiriyah.edu.iq/media/lectures/12/12_2020_06_26!11_47_57_PM.pdf
+
+    // Implemented in spriteTest.c
 }
