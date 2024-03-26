@@ -282,8 +282,14 @@ typedef struct spaceship
     int old_y;
     int prevx;
     int prevy;
+    
     int dx;
     int dy;
+    int prevdx;
+    int prevdy;
+    int old_dx;
+    int old_dy;
+
     int orientationX;
     int orientationY;
     int health;
@@ -439,6 +445,7 @@ void handle_ship_physics(ship *player_ship){
 }
 
 void draw_ship(ship *player);
+void erase_ship(ship *player);
 void draw_bullet(bullet *bullet, int radius);
 void bullet_helper(int xc, int yc, int x, int y);
 
@@ -543,7 +550,7 @@ int main(void){
 
     ship player1_ship;
     player1_ship.x = 50;
-    player1_ship.y = 50;
+    player1_ship.y = 150;
     
     int h_drawn = 0;
     
@@ -575,7 +582,11 @@ int main(void){
 		pixel_buffer_start = *(pixel_ctrl_ptr + 1);
 
 		// erase old boxes
-		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
+		//draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
+
+        // erase old ship
+
+        erase_ship(&player1_ship);
         
         if(h_drawn < 2){
            		// draw hitboxes
@@ -591,13 +602,21 @@ int main(void){
         player1_ship.old_x = player1_ship.prevx;
         player1_ship.old_y = player1_ship.prevy;
 
+        player1_ship.old_dx = player1_ship.prevdx;
+        player1_ship.old_dy = player1_ship.prevdy;
+
         player1_ship.prevx = player1_ship.x;
         player1_ship.prevy = player1_ship.y;
 
+        player1_ship.prevdx = player1_ship.dx;
+        player1_ship.prevdy = player1_ship.dy;
+        
 		// draw new boxes at shifted positions
         //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
-		draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
+		//draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
+        // draw new ship
 
+        draw_ship(&player1_ship);
         // output data onto LEDS
         for(int k = 0; k < inputs_per_player; k++){
             if(p1_keyboard.directions[k]){
@@ -616,6 +635,149 @@ void draw_box(int x, int y, int x_size, int y_size, short int color) {
 		}
 	}
 }
+
+void erase_ship(ship *player) {
+
+    int x = player->old_x;
+    int y = player->old_y;
+    int dx = player->old_dx;
+    int dy = player->old_dy;
+
+    int counter = 0;    
+
+    if (dx == 0 && dy == 1) // ship Up
+    {                       // Drawing ship up case
+
+        for (int i = y; i < y + SHIPUP_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPUP_WIDTH; j++)
+            {
+                if (shipUp[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPUP_WIDTH / 2), i - (SHIPUP_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == 1 && dy == 0)
+    { // ship Right
+        for (int i = y; i < y + SHIPRIGHT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPRIGHT_WIDTH; j++)
+            {
+                if (shipRight[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPRIGHT_WIDTH / 2), i - (SHIPRIGHT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == 0 && dy == -1)
+    { // ship Down
+        for (int i = y; i < y + SHIPDOWN_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPDOWN_WIDTH; j++)
+            {
+                if (shipDown[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPDOWN_WIDTH / 2), i - (SHIPDOWN_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == -1 && dy == 0)
+    {
+        for (int i = y; i < y + SHIPLEFT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPLEFT_WIDTH; j++)
+            {
+                if (shipLeft[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPLEFT_WIDTH / 2), i - (SHIPLEFT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == 1 && dy == 1) // up Right
+    {
+        for (int i = y; i < y + SHIPUPRIGHT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPUPRIGHT_WIDTH; j++)
+            {
+                if (shipUpRight[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPUPRIGHT_WIDTH / 2), i - (SHIPUPRIGHT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == -1 && dy == 1)
+    { // upLeft
+        for (int i = y; i < y + SHIPUPLEFT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPUPLEFT_WIDTH; j++)
+            {
+                if (shipUpLeft[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPUPLEFT_WIDTH / 2), i - (SHIPUPLEFT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == -1 && dy == -1)
+    { // down Left
+        for (int i = y; i < y + SHIPDOWNLEFT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPDOWNLEFT_WIDTH; j++)
+            {
+                if (shipDownLeft[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPDOWNLEFT_WIDTH / 2), i - (SHIPDOWNLEFT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+    else if (dx == 1 && dy == -1)
+    { // down Right
+        for (int i = y; i < y + SHIPDOWNRIGHT_HEIGHT; i++)
+        {
+            for (int j = x; j < x + SHIPDOWNRIGHT_WIDTH; j++)
+            {
+                if (shipDownRight[counter] == 0x0000)
+                {
+                    counter++;
+                    continue;
+                }
+                plot_pixel(j - (SHIPDOWNRIGHT_WIDTH / 2), i - (SHIPDOWNRIGHT_HEIGHT / 2), 0);
+                counter++;
+            }
+        }
+    }
+
+}
+
+
 void draw_ship(ship *player)
 {
     // check dx and dy
