@@ -647,7 +647,7 @@ void erase_ship(ship *player) {
 
     int counter = 0;    
 
-    if (dx == 0 && dy == 1) // ship Up
+    if (dx == 0 && dy == -1) // ship Up
     {                       // Drawing ship up case
 
         for (int i = y; i < y + SHIPUP_HEIGHT; i++)
@@ -680,7 +680,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == 0 && dy == -1)
+    else if (dx == 0 && dy == 1)
     { // ship Down
         for (int i = y; i < y + SHIPDOWN_HEIGHT; i++)
         {
@@ -712,7 +712,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == 1 && dy == 1) // up Right
+    else if (dx == 1 && dy == -1) // up Right
     {
         for (int i = y; i < y + SHIPUPRIGHT_HEIGHT; i++)
         {
@@ -728,7 +728,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == -1 && dy == 1)
+    else if (dx == -1 && dy == -1)
     { // upLeft
         for (int i = y; i < y + SHIPUPLEFT_HEIGHT; i++)
         {
@@ -744,7 +744,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == -1 && dy == -1)
+    else if (dx == -1 && dy == 1)
     { // down Left
         for (int i = y; i < y + SHIPDOWNLEFT_HEIGHT; i++)
         {
@@ -760,7 +760,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == 1 && dy == -1)
+    else if (dx == 1 && dy == 1)
     { // down Right
         for (int i = y; i < y + SHIPDOWNRIGHT_HEIGHT; i++)
         {
@@ -791,7 +791,7 @@ void draw_ship(ship *player)
 
     int counter = 0;
 
-    if (dx == 0 && dy == 1) // ship Up
+    if (dx == 0 && dy == -1) // ship Up
     {                       // Drawing ship up case
 
         for (int i = y; i < y + SHIPUP_HEIGHT; i++)
@@ -824,7 +824,7 @@ void draw_ship(ship *player)
             }
         }
     }
-    else if (dx == 0 && dy == -1)
+    else if (dx == 0 && dy == 1)
     { // ship Down
         for (int i = y; i < y + SHIPDOWN_HEIGHT; i++)
         {
@@ -856,7 +856,7 @@ void draw_ship(ship *player)
             }
         }
     }
-    else if (dx == 1 && dy == 1) // up Right
+    else if (dx == 1 && dy == -1) // up Right
     {
         for (int i = y; i < y + SHIPUPRIGHT_HEIGHT; i++)
         {
@@ -872,7 +872,7 @@ void draw_ship(ship *player)
             }
         }
     }
-    else if (dx == -1 && dy == 1)
+    else if (dx == -1 && dy == -1)
     { // upLeft
         for (int i = y; i < y + SHIPUPLEFT_HEIGHT; i++)
         {
@@ -888,7 +888,7 @@ void draw_ship(ship *player)
             }
         }
     }
-    else if (dx == -1 && dy == -1)
+    else if (dx == -1 && dy == 1)
     { // down Left
         for (int i = y; i < y + SHIPDOWNLEFT_HEIGHT; i++)
         {
@@ -904,7 +904,7 @@ void draw_ship(ship *player)
             }
         }
     }
-    else if (dx == 1 && dy == -1)
+    else if (dx == 1 && dy == 1)
     { // down Right
         for (int i = y; i < y + SHIPDOWNRIGHT_HEIGHT; i++)
         {
