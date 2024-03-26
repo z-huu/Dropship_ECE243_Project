@@ -588,6 +588,11 @@ int main(void){
 		//draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
         // draw new ship
 
+        if ((player1_ship.x == player1_ship.prevx)||(player1_ship.y == player1_ship.prevy)) {
+            // if the ship is stationary, conserve a dx or dy value
+            // Issue: when the ship is stationary, dx == dy == 0, so we don't draw it
+        }
+
         draw_ship(&player1_ship);
 
         // RENDER STEP
@@ -625,7 +630,7 @@ int main(void){
 
         player1_ship.prevdx = player1_ship.dx;
         player1_ship.prevdy = player1_ship.dy;
-        
+
     }
 }
 
@@ -775,6 +780,8 @@ void erase_ship(ship *player) {
                 counter++;
             }
         }
+    } else {
+        // TO DO: Fill in this else statement for draw_ship and erase_ship.
     }
 
 }
@@ -919,6 +926,8 @@ void draw_ship(ship *player)
                 counter++;
             }
         }
+    } else {
+        // TO DO: Fill in this else statement for draw_ship and erase_ship.
     }
 }
 void wait_for_vsync() {
