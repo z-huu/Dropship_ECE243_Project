@@ -576,18 +576,25 @@ int main(void){
         player1_ship.dx = p1_keyboard.directions[3] - p1_keyboard.directions[2];
         handle_ship_physics(&player1_ship);
         
-        // RENDER STEP
-        // wait for vsync and update buffer positions
-		wait_for_vsync();
-		pixel_buffer_start = *(pixel_ctrl_ptr + 1);
-
-		// erase old boxes
+        // erase old boxes
 		//draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
 
         // erase old ship
 
         erase_ship(&player1_ship);
-        
+
+        // draw new boxes at shifted positions
+        //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
+		//draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
+        // draw new ship
+
+        draw_ship(&player1_ship);
+
+        // RENDER STEP
+        // wait for vsync and update buffer positions
+		wait_for_vsync();
+		pixel_buffer_start = *(pixel_ctrl_ptr + 1);
+
         if(h_drawn < 2){
            		// draw hitboxes
             for (int k = 0; k < hitbox_total; k++) {
@@ -597,7 +604,15 @@ int main(void){
 		    } 
             h_drawn++;
         }
-
+        
+		
+        // output data onto LEDS
+        for(int k = 0; k < inputs_per_player; k++){
+            if(p1_keyboard.directions[k]){
+                LED_Out += 0x1 << k;
+            }
+        }
+        *LEDs = LED_Out;
 
         player1_ship.old_x = player1_ship.prevx;
         player1_ship.old_y = player1_ship.prevy;
@@ -611,19 +626,6 @@ int main(void){
         player1_ship.prevdx = player1_ship.dx;
         player1_ship.prevdy = player1_ship.dy;
         
-		// draw new boxes at shifted positions
-        //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
-		//draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
-        // draw new ship
-
-        draw_ship(&player1_ship);
-        // output data onto LEDS
-        for(int k = 0; k < inputs_per_player; k++){
-            if(p1_keyboard.directions[k]){
-                LED_Out += 0x1 << k;
-            }
-        }
-        *LEDs = LED_Out;
     }
 }
 
