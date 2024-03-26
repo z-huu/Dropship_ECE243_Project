@@ -80,18 +80,6 @@ void handle_physics(int* x_box, int* y_box, int* dx, int* dy, int N, int speed,
 
 void draw_box(int x, int y, int x_size, int y_size, short int color);
 
-// hitbox object, describes top left (x1, y1) and bottom right (x2, y2) corners,
-// rest can be determined implicitly TO DO: maybe add rotation value? can be
-// used to have angled corners/boxes
-typedef struct hitbox {
-	unsigned int x1;
-	unsigned int y1;
-	unsigned int x2;
-	unsigned int y2;
-} hitbox;
-
-const int hitbox_total = 1;
-bool collision_frame[320][240];
 
 // TIMER DECLARATION
 struct timer{
@@ -102,6 +90,20 @@ struct timer{
     volatile unsigned int count_low;
     volatile unsigned int count_high;
 };
+
+// hitbox object, describes top left (x1, y1) and bottom right (x2, y2) corners,
+// rest can be determined implicitly TO DO: maybe add rotation value? can be
+// used to have angled corners/boxes
+typedef struct hitbox {
+	unsigned int x1;
+	unsigned int y1;
+	unsigned int x2;
+	unsigned int y2;
+} hitbox;
+
+#define hitbox_total 3
+bool collision_frame[400][300];
+
 /* KEYBOARD DECLARATION
 PS/2 Port Description (port 1 start: 0xFF200100, port 2 start: 0xFF200108)
 for both, it is the data register then the control register
@@ -381,26 +383,21 @@ int main(void){
 	struct hitbox colliders[hitbox_total];
 
 	// randomize locations of hitboxes and their sizes
-	colliders[0].x1 = 200;
-	colliders[0].y1 = 200;
-	colliders[0].x2 = 220;
-	colliders[0].y2 = 220;
-	/*for (int k = 0; k < hitbox_total; k++) {
-		colliders[k].x1 = ((rand() % x_max/2));
-		colliders[k].y1 = ((rand() % y_max/2));
+	for (int k = 0; k < hitbox_total; k++) {
+		colliders[k].x1 = 5 + 35*k;
+		colliders[k].y1 = 5 + 30*k;
 
 		// ensure x2 is GREATER than x1
 		while (colliders[k].x2 <= colliders[k].x1 && colliders[k].x2 < x_max) {
-			colliders[k].x2 = ((rand() % x_max/2) + x_max/2);
+			colliders[k].x2 = 15 + 35*k;
 		}
 		// same for y2 and y1
 		while (colliders[k].y2 <= colliders[k].y1 && colliders[k].y2 < y_max) {
-			colliders[k].y2 = ((rand() % y_max/2) + y_max/2);
+			colliders[k].y2 = 25 + 30*k;
 		}
 	}
-	*/
 
-	// fill in hitbox mask to show where boxes CANNOT exist in
+	// fill in collision mask to show where players CANNOT exist in
 	for (int k = 0; k < hitbox_total; k++) {
 		for (int x_coord = colliders[k].x1; x_coord < colliders[k].x2;
 			 x_coord++) {
@@ -457,7 +454,9 @@ int main(void){
     ship player1_ship;
     player1_ship.x = 50;
     player1_ship.y = 50;
-
+    
+    int h_drawn = 0;
+    
     while(1){
         LED_Out = 0;
         handle_Keyboard(&p1_keyboard, &current_input);
@@ -487,13 +486,17 @@ int main(void){
 
 		// erase old boxes
 		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
-
-		// draw hitboxes
-        for (int k = 0; k < hitbox_total; k++) {
+        
+        if(h_drawn < 2){
+           		// draw hitboxes
+            for (int k = 0; k < hitbox_total; k++) {
 			draw_box(colliders[k].x1, colliders[k].y1,
 					 colliders[k].x2 - colliders[k].x1,
 					 colliders[k].y2 - colliders[k].y1, color_list[1]);
-		}
+		    } 
+            h_drawn++;
+        }
+
 
         player1_ship.old_x = player1_ship.x;
         player1_ship.old_y = player1_ship.y;
