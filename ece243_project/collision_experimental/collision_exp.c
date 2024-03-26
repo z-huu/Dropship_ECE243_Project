@@ -395,7 +395,15 @@ int main(void){
 		while (colliders[k].y2 <= colliders[k].y1 && colliders[k].y2 < y_max) {
 			colliders[k].y2 = 25 + 30*k;
 		}
-	}
+
+        /* Some print statements to help debugging on CPUlator.
+        *
+        * printf("=========================\n");
+		* printf("Collider %d x1: %d y1: %d\n", k, colliders[k].x1, colliders[k].y1);
+		* printf("Collider %d x2: %d y2: %d\n", k, colliders[k].x2, colliders[k].y2);
+        * 
+        */
+    }
 
 	// fill in collision mask to show where players CANNOT exist in
 	for (int k = 0; k < hitbox_total; k++) {
