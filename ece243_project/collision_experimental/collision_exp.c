@@ -387,22 +387,17 @@ int main(void){
 		colliders[k].x1 = 5 + 35*k;
 		colliders[k].y1 = 5 + 30*k;
 
-		// ensure x2 is GREATER than x1
-		while (colliders[k].x2 <= colliders[k].x1 && colliders[k].x2 < x_max) {
-			colliders[k].x2 = 15 + 35*k;
-		}
-		// same for y2 and y1
-		while (colliders[k].y2 <= colliders[k].y1 && colliders[k].y2 < y_max) {
-			colliders[k].y2 = 25 + 30*k;
-		}
+		do {
+		colliders[k].x2 = rand() % x_max -1;
+		colliders[k].y2 = rand() % y_max -1;
+		} while (colliders[k].x2 < colliders[k].x1 || colliders[k].y2 < colliders[k].y1);
 
-        /* Some print statements to help debugging on CPUlator.
-        *
+        /*	Print statements to help CPUlator debugging
         * printf("=========================\n");
 		* printf("Collider %d x1: %d y1: %d\n", k, colliders[k].x1, colliders[k].y1);
 		* printf("Collider %d x2: %d y2: %d\n", k, colliders[k].x2, colliders[k].y2);
-        * 
         */
+    
     }
 
 	// fill in collision mask to show where players CANNOT exist in
