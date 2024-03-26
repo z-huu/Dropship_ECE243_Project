@@ -120,6 +120,7 @@ static const int shipDownLeft[] = {
 int pixel_buffer_start;
 
 void draw_ship(ship* player);
+void draw_bullet(bullet* bullet);
 
 void clear_screen();
 int counter = 0;
@@ -171,7 +172,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPUP_WIDTH / 2), i + (SHIPUP_HEIGHT / 2), shipUp[counter]);
+                draw_pixel(j - (SHIPUP_WIDTH / 2), i - (SHIPUP_HEIGHT / 2), shipUp[counter]);
                 counter++;
             }
         }
@@ -187,7 +188,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPRIGHT_WIDTH / 2), i + (SHIPRIGHT_HEIGHT / 2), shipRight[counter]);
+                draw_pixel(j - (SHIPRIGHT_WIDTH / 2), i - (SHIPRIGHT_HEIGHT / 2), shipRight[counter]);
                 counter++;
             }
         }
@@ -203,7 +204,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPDOWN_WIDTH / 2), i + (SHIPDOWN_HEIGHT / 2), shipDown[counter]);
+                draw_pixel(j - (SHIPDOWN_WIDTH / 2), i - (SHIPDOWN_HEIGHT / 2), shipDown[counter]);
                 counter++;
             }
         }
@@ -219,7 +220,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPLEFT_WIDTH / 2), i + (SHIPLEFT_HEIGHT / 2), shipLeft[counter]);
+                draw_pixel(j - (SHIPLEFT_WIDTH / 2), i - (SHIPLEFT_HEIGHT / 2), shipLeft[counter]);
                 counter++;
             }
         }
@@ -235,7 +236,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPUPRIGHT_WIDTH / 2), i + (SHIPUPRIGHT_HEIGHT / 2), shipUpRight[counter]);
+                draw_pixel(j - (SHIPUPRIGHT_WIDTH / 2), i - (SHIPUPRIGHT_HEIGHT / 2), shipUpRight[counter]);
                 counter++;
             }
         }
@@ -251,7 +252,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPUPLEFT_WIDTH / 2), i + (SHIPUPLEFT_HEIGHT / 2), shipUpLeft[counter]);
+                draw_pixel(j - (SHIPUPLEFT_WIDTH / 2), i - (SHIPUPLEFT_HEIGHT / 2), shipUpLeft[counter]);
                 counter++;
             }
         }
@@ -267,7 +268,7 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPDOWNLEFT_WIDTH / 2), i + (SHIPDOWNLEFT_HEIGHT / 2), shipDownLeft[counter]);
+                draw_pixel(j - (SHIPDOWNLEFT_WIDTH / 2), i - (SHIPDOWNLEFT_HEIGHT / 2), shipDownLeft[counter]);
                 counter++;
             }
         }
@@ -283,13 +284,13 @@ void draw_ship(ship* player)
                     counter++;
                     continue;
                 }
-                draw_pixel(j - (SHIPDOWNRIGHT_WIDTH / 2), i + (SHIPDOWNRIGHT_HEIGHT / 2), shipDownRight[counter]);
+                draw_pixel(j - (SHIPDOWNRIGHT_WIDTH / 2), i - (SHIPDOWNRIGHT_HEIGHT / 2), shipDownRight[counter]);
                 counter++;
             }
         }
     }
 }
-void drawBullet(int x, int y)
+void drawBullet(bullet* bullet)
 {
     // implement this circle drawing algorithm
     // https://uomustansiriyah.edu.iq/media/lectures/12/12_2020_06_26!11_47_57_PM.pdf
