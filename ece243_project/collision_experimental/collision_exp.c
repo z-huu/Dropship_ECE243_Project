@@ -236,10 +236,16 @@ void handle_ship_physics(ship *player_ship){
     // check collisions of ship, stop movement in that direction if it will collide
     // new plan: x direction then y direction move and checks
     
+    int x_offset = 0;
+    bool x_collide = false;
+    if(player_ship->dx > 0){
+        x_offset = ship_size;
+    }else if(player_ship->dx == 0){
+        x_collide = true;
+    }
     
     if(player_ship->x + ship_speed * player_ship->dx > x_min_threshold 
     && player_ship->x + ship_speed * player_ship->dx < x_max_threshold - ship_size - 1){
-        bool x_collide = false;
         // x_c will be the distance we have travelled so far
         for(int x_c = 0; 
         x_c < ship_speed && !x_collide; 
@@ -248,15 +254,24 @@ void handle_ship_physics(ship *player_ship){
             for(int y_c = player_ship->y; 
             y_c < player_ship->y + ship_size; 
             y_c++){
+
                 if(player_ship->x > x_min_threshold
                 && player_ship->x < x_max_threshold
-                && collision_frame[player_ship->x + (player_ship->dx)][y_c]){
+                && collision_frame[player_ship->x + x_offset + (player_ship->dx)][y_c]){
                     x_collide = true;
                     player_ship->x -= player_ship->dx;
                 }
             }
             player_ship->x += player_ship->dx;
         }
+    }
+
+    int y_offset = 0;
+    bool y_collide = false;
+    if(player_ship->dy > 0){
+        y_offset = ship_size;
+    }else if(player_ship->dy == 0){
+        y_collide = true;
     }
 
     if(player_ship->y + ship_speed * player_ship->dy > y_min_threshold 
@@ -272,7 +287,7 @@ void handle_ship_physics(ship *player_ship){
             x_c++){
                 if(player_ship->y > y_min_threshold
                 && player_ship->y < y_max_threshold
-                && collision_frame[x_c][player_ship->y + (player_ship->dy)]){
+                && collision_frame[x_c][player_ship->y + y_offset + (player_ship->dy)]){
                     y_collide = true;
                     player_ship->y -= player_ship->dy;
                 }
