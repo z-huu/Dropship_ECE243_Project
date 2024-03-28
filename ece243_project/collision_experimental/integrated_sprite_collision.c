@@ -621,11 +621,6 @@ int main(void){
         }
         *LEDs = LED_Out;
 
-        if ((player1_ship.dx == 0)&&(player1_ship.dy == 0)) {
-            player1_ship.remember_dx = player1_ship.prevdx;
-            player1_ship.remember_dy = player1_ship.prevdy;
-        }
-
         player1_ship.old_x = player1_ship.prevx;
         player1_ship.old_y = player1_ship.prevy;
 
@@ -662,7 +657,7 @@ void erase_ship(ship *player) {
     if (dx == 0 && dy == 0) {
         dx = player->remember_dx;
         dy = player->remember_dy;
-    }
+    } 
 
     if (dx == 0 && dy == -1) // ship Up
     {                       // Drawing ship up case
@@ -799,8 +794,6 @@ void erase_ship(ship *player) {
 
 void draw_ship(ship *player)
 {
-    // check dx and dy
-
     int x = player->x;
     int y = player->y;
     int dx = player->dx;
@@ -811,6 +804,11 @@ void draw_ship(ship *player)
     if (dx == 0 && dy == 0) {
         dx = player->remember_dx;
         dy = player->remember_dy;
+        player->dx = dx;
+        player->dy = dy;
+    } else {
+        player->remember_dx = dx;
+        player->remember_dy = dy;
     }
 
     if (dx == 0 && dy == -1) // ship Up
