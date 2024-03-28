@@ -289,6 +289,8 @@ typedef struct spaceship
     int prevdy;
     int old_dx;
     int old_dy;
+    int remember_dx;
+    int remember_dy;
 
     int orientationX;
     int orientationY;
@@ -619,6 +621,11 @@ int main(void){
         }
         *LEDs = LED_Out;
 
+        if ((player1_ship.dx == 0)&&(player1_ship.dy == 0)) {
+            player1_ship.remember_dx = player1_ship.prevdx;
+            player1_ship.remember_dy = player1_ship.prevdy;
+        }
+
         player1_ship.old_x = player1_ship.prevx;
         player1_ship.old_y = player1_ship.prevy;
 
@@ -651,6 +658,11 @@ void erase_ship(ship *player) {
     int dy = player->old_dy;
 
     int counter = 0;    
+
+    if (dx == 0 && dy == 0) {
+        dx = player->remember_dx;
+        dy = player->remember_dy;
+    }
 
     if (dx == 0 && dy == -1) // ship Up
     {                       // Drawing ship up case
@@ -780,9 +792,7 @@ void erase_ship(ship *player) {
                 counter++;
             }
         }
-    } else {
-        // TO DO: Fill in this else statement for draw_ship and erase_ship.
-    }
+    } 
 
 }
 
@@ -797,6 +807,11 @@ void draw_ship(ship *player)
     int dy = player->dy;
 
     int counter = 0;
+
+    if (dx == 0 && dy == 0) {
+        dx = player->remember_dx;
+        dy = player->remember_dy;
+    }
 
     if (dx == 0 && dy == -1) // ship Up
     {                       // Drawing ship up case
