@@ -319,16 +319,13 @@ typedef struct bullet{
 }bullet;
 
 bullet **bullet_container;
-int num_bullets = 0;
+int num_bullets = 1;
 int total_bullet_memory = 10;
 #define bullet_size 5
 
 bullet* create_bullet(){
     // should use realloc to double memory should there be no space available
-    if(num_bullets < total_bullet_memory - 1){
-        // no need to expand
-
-    }else{
+    if(num_bullets > total_bullet_memory - 2){
         // need to expand
         total_bullet_memory *= 2;
         bullet_container = (bullet**) realloc(bullet_container, total_bullet_memory*sizeof(bullet*));
@@ -338,11 +335,10 @@ bullet* create_bullet(){
         // bullet container still exists, not NULL
         bullet *new_bullet = (bullet*) malloc(sizeof(bullet));
         if(new_bullet){
-            bullet_container[num_bullets] = new_bullet;
+            bullet_container[num_bullets] = (bullet*) new_bullet;
             num_bullets++;
             return new_bullet;
         }
-        
     }
     // if here, one of the allocations failed, so give a null ptr
     return NULL;
@@ -468,12 +464,14 @@ void update_bullets(){
     }
 }
 
+/*
 void clear_bullet_array(){
     for(int k = 0; k < num_bullets; k++){
         free(bullet_container[k]);
     }
     free(bullet_container);
 }
+*/
 
 void shoot(ship *player){
     // take position and orientation data to create a bullet
@@ -662,9 +660,11 @@ int main(void){
 
         // handle shoot cooldown and whether or not we have fired
         update_ship_on_frame(&player1_ship);
+        
         if(player1_ship.canShoot){
             shoot(&player1_ship);
         }
+
         update_bullets();
 
         // VGA DRAWING UPDATED POSITIONS
@@ -675,7 +675,6 @@ int main(void){
                     bullet_container[k]->y - bullet_container[k]->dy * bullet_container[k]->speed,
                     bullet_container[k]->size, bullet_container[k]->size, color_list[6]);
             }
-            
         }
 
         player1_ship.old_x = player1_ship.x;
