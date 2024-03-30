@@ -107,7 +107,7 @@ typedef struct hitbox {
 	unsigned int y2;
 } hitbox;
 
-#define hitbox_total 3
+#define hitbox_total 1
 bool collision_frame[400][300];
 
 /* KEYBOARD DECLARATION
@@ -315,11 +315,13 @@ typedef struct bullet{
     int damage;
     int speed;
     int life_time;
+    int size;
 }bullet;
 
 bullet **bullet_container;
 int num_bullets = 0;
 int total_bullet_memory = 10;
+#define bullet_size 5
 
 bullet* create_bullet(){
     // should use realloc to double memory should there be no space available
@@ -334,7 +336,7 @@ bullet* create_bullet(){
 
     if(bullet_container){
         // bullet container still exists, not NULL
-        bullet *new_bullet = (bullet*) calloc(1, sizeof(bullet));
+        bullet *new_bullet = (bullet*) malloc(sizeof(bullet));
         if(new_bullet){
             bullet_container[num_bullets] = new_bullet;
             num_bullets++;
@@ -379,14 +381,90 @@ void destroy_bullet(bullet* deleting_bullet){
 void update_bullets(){
     for(int k = 0; k < num_bullets; k++){
         // move bullet in space
-        bullet_container[k]->x += bullet_container[k]->dx * bullet_container[k]->speed;
-        bullet_container[k]->y += bullet_container[k]->dy * bullet_container[k]->speed;
-        bullet_container[k]->life_time--;
+        // X Direction
+        int x_offset = 0;
+        bool x_collide = false;
+        int y_offset = 0;
+        bool y_collide = false;
+        bool player_hit = false;
 
-        if(bullet_container[k]->life_time < 0){
+        if(bullet_container[k]->dx > 0){
+            x_offset = bullet_container[k]->size;
+        }
+
+        //bullet_container[k]->x += bullet_container[k]->dx * bullet_container[k]->speed;
+        //bullet_container[k]->y += bullet_container[k]->dy * bullet_container[k]->speed;
+
+        if(bullet_container[k]->x + bullet_container[k]->speed * bullet_container[k]->dx > x_min_threshold 
+        && bullet_container[k]->x + bullet_container[k]->speed * bullet_container[k]->dx < x_max_threshold - bullet_container[k]->size - 1){
+            // x_c will be the distance we have travelled so far
+            for(int x_c = 0; 
+            x_c < bullet_container[k]->speed && !x_collide && !player_hit && bullet_container[k]->dx != 0; 
+            x_c++){
+                // scan the ship's height, each horizontal pixel step
+                for(int y_c = bullet_container[k]->y; 
+                y_c < bullet_container[k]->y + ship_size; 
+                y_c++){
+                    // insert player checks here, BEFORE checking wall hit
+
+                    if(bullet_container[k]->x > x_min_threshold
+                    && bullet_container[k]->x < x_max_threshold
+                    && collision_frame[bullet_container[k]->x + x_offset + (bullet_container[k]->dx)][y_c]){
+                        x_collide = true;
+                        bullet_container[k]->x -= bullet_container[k]->dx;
+                    }
+                }
+                bullet_container[k]->x += bullet_container[k]->dx;
+            }
+        }else{
+            x_collide = true;
+        }
+
+        // Y DIRECTION
+        
+        if(bullet_container[k]->dy > 0){
+            y_offset = bullet_container[k]->size;
+        }
+
+        if(bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy > y_min_threshold 
+        && bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy < y_max_threshold - bullet_container[k]->size - 1){
+            bool y_collide = false;
+            // y_c will be the distance we have travelled so far
+            for(int y_c = 0; 
+            y_c < bullet_container[k]->speed && !y_collide && !player_hit && bullet_container[k]->dy != 0; 
+            y_c++){
+                // scan the ship's length, each vertical pixel step
+                for(int x_c = bullet_container[k]->x; 
+                x_c < bullet_container[k]->x + bullet_container[k]->size; 
+                x_c++){
+                    // insert player checks here, BEFORE checking wall hit.
+
+
+                    if(bullet_container[k]->y > y_min_threshold
+                    && bullet_container[k]->y < y_max_threshold
+                    && collision_frame[x_c][bullet_container[k]->y + y_offset + (bullet_container[k]->dy)]){
+                        y_collide = true;
+                        bullet_container[k]->y -= bullet_container[k]->dy;
+                    }
+                }
+                bullet_container[k]->y += bullet_container[k]->dy;
+            }
+        }else{
+            y_collide = true;
+        }
+
+        if(player_hit){
+            // damage player THEN destroy bullet
+        }else if(x_collide || y_collide){
+            // bullet collided with wall!
+            destroy_bullet(bullet_container[k]);
+        }else if(bullet_container[k]->life_time < 0){
             // delete this bullet if its lifetime is out!
             destroy_bullet(bullet_container[k]);
         }
+        
+        // decrement lifetime
+        bullet_container[k]->life_time--;
     }
 }
 
@@ -412,7 +490,7 @@ void shoot(ship *player){
             new_bullet->dy = player->orientationY;
             new_bullet->damage = 50;
             new_bullet->life_time = 60;
-            new_bullet->speed = 2;
+            new_bullet->speed = 1;
         }
     }else{
         // cant shoot, weird scenario made in case
@@ -460,8 +538,8 @@ int main(void){
 
 	// randomize locations of hitboxes and their sizes
 	for (int k = 0; k < hitbox_total; k++) {
-		colliders[k].x1 = 5 + 35*k;
-		colliders[k].y1 = 5 + 30*k;
+		colliders[k].x1 = 55 + 35*(rand()%3);
+		colliders[k].y1 = 55 + 30*(rand()%3);
 
 		do {
 		colliders[k].x2 = rand() % x_max -1;
@@ -534,7 +612,7 @@ int main(void){
     ship player1_ship;
     player1_ship.x = 50;
     player1_ship.y = 50;
-    player1_ship.fire_rate = 15;
+    player1_ship.fire_rate = 5;
     player1_ship.frame_count = 0;
     player1_ship.canShoot = false;
 
