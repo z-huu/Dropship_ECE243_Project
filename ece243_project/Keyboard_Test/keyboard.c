@@ -8,24 +8,6 @@ MAIN TO DO LIST:
 1: figure out how to implement keyboard with interrupts
     - the main structure should be pretty similar, just with setting current input via the interrupt, and handling input during the interrupt
 
-2: try to make it so the player controls are held in separate player keyboard objects?
-    - options are:
-        A: use a single keyboard object, which will handle the entire keyboard space
-            - in this case, the division between players will occur at the midpoint of the arrays
-                (ie lets say we have 4 inputs per player. the bindings and directions will be 2*4 = 8 indices, first 4 for P1, last 4 for P2)
-            - leaning towards this since it makes handling single separate keyboards MUCH easier
-            - also, if we manage to have multiple keyboards, it becomes trivial to expand for that
-                - simply use a different keyboard_ptr value for the other keyboard address
-        B: modify player_keyboard object, as well as how inputs are handled
-            - would probably need a significant restructuring of how we poll for keyboard inputs
-            - leaning away from this since im not sure how this would fit if i were to go with interrupts as well...
-
-3: figure out how to make a simple box for our space ship
-    - essentially, on a frame (1/60 s), we move the ship by speed*dx + speed*dy in x and y directions respectively
-    - would be good to use hex display numbers?
-    - maybe figure out how to display numbers on VGA? (may be overkill for just testing though)
-    - will be used to test collisions and movement via keyboard
-    - probably will be done in a separate project/C file to keep things a bit tidy
 *** *** ***
 */
 
