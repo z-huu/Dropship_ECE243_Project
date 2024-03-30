@@ -491,6 +491,7 @@ void shoot(ship *player){
             new_bullet->damage = 50;
             new_bullet->life_time = 60;
             new_bullet->speed = 1;
+            new_bullet->size = 4;
         }
     }else{
         // cant shoot, weird scenario made in case
@@ -649,7 +650,7 @@ int main(void){
         for(int k = 0; k < num_bullets; k++){
             draw_box(bullet_container[k]->x - bullet_container[k]->dx * bullet_container[k]->speed, 
                     bullet_container[k]->y - bullet_container[k]->dy * bullet_container[k]->speed,
-                    4, 4, 0);
+                    bullet_container[k]->size, bullet_container[k]->size, 0);
         }
 
         // PHYSICS STEPPING
@@ -672,7 +673,7 @@ int main(void){
             if(bullet_container != NULL){
                 draw_box(bullet_container[k]->x - bullet_container[k]->dx * bullet_container[k]->speed, 
                     bullet_container[k]->y - bullet_container[k]->dy * bullet_container[k]->speed,
-                    4, 4, color_list[6]);
+                    bullet_container[k]->size, bullet_container[k]->size, color_list[6]);
             }
             
         }
