@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 /*
 *** *** ***
@@ -315,32 +316,52 @@ typedef struct bullet{
     int damage;
     int speed;
     int life_time;
+    struct bullet* next;
 }bullet;
 
-bullet **bullet_container;
+typedef struct bullet_linked_list{
+    int num;
+    bullet* head;
+}bullet_linked_list;
+
+bullet_linked_list bullet_list;
 int num_bullets = 0;
 int total_bullet_memory = 10;
+int frame_count = 0;
 
 bullet* create_bullet(){
-    // should use realloc to double memory should there be no space available
-    if(num_bullets < total_bullet_memory - 1){
-        // no need to expand
+    //create the bullet
+    bullet *new_bullet = (bullet*) malloc(sizeof(bullet));
+    bullet *current_bullet;
+    int k = 0;
+    if(new_bullet){
+        printf("ALLOCATED new bullet at addr %d. t = %d\n", new_bullet, frame_count);
+        new_bullet->next = NULL;
+        if(bullet_list.head == NULL){
+            bullet_list.head = new_bullet;
+        }else{
+            // cycle to head of linked list
+            current_bullet = bullet_list.head;
 
-    }else{
-        // need to expand
-        total_bullet_memory *= 2;
-        bullet_container = (bullet**) realloc(bullet_container, total_bullet_memory*sizeof(bullet*));
-    }
-
-    if(bullet_container){
-        // bullet container still exists, not NULL
-        bullet *new_bullet = (bullet*) calloc(1, sizeof(bullet));
-        if(new_bullet){
-            bullet_container[num_bullets] = new_bullet;
-            num_bullets++;
-            return new_bullet;
+            while(current_bullet->next != NULL){
+                current_bullet = current_bullet->next;
+            }
+            
+            current_bullet->next = new_bullet;
+            printf("added after addr %d\n", current_bullet);
         }
-        
+        bullet_list.num++;
+        num_bullets++;
+
+
+        current_bullet = bullet_list.head;
+        k = 0;
+        while(current_bullet != NULL){
+            printf("BULLET #%d POS (%d, %d)\n", k, current_bullet->x, current_bullet->y);
+            current_bullet = current_bullet->next;
+        }
+    
+        return new_bullet;
     }
     // if here, one of the allocations failed, so give a null ptr
     return NULL;
@@ -348,53 +369,72 @@ bullet* create_bullet(){
 
 // can certainly be optimized
 void destroy_bullet(bullet* deleting_bullet){
+    // check if list is empty to begin with
+    if(bullet_list.head == NULL){
+        return;
+    }
+
     // avoid freeing NULL address
     if(deleting_bullet == NULL){
         return;
     }
-    // try to get bullet index inside of the bullet_container array
-    int index = 0;
-    bool found = false;
-    for(index = 0; index < num_bullets && !found; index++){
-        if(bullet_container[index] == deleting_bullet){
-            // found!
-            found = true;
-        }
-    }
-    if(found){
-        // should remove this index, then shift all indices after it down a slot
-        // essentially shrinking the array around the removed index
+
+    // check if deleting bullet is the head...
+    if(bullet_list.head == deleting_bullet){
+        bullet_list.head = deleting_bullet->next;
+        printf("FREEING BULLET at addr %d. t = %d\n", deleting_bullet, frame_count);
         free(deleting_bullet);
-        for(int k = index + 1; k < num_bullets; k++){
-            bullet_container[k - 1] = bullet_container[k]; 
-        }
         num_bullets--;
-    }else{
-        // trying to delete bullet that isnt in the array?
-        // dont do anything here...
+        bullet_list.num--;
         return;
     }
+
+    bullet *current_bullet = bullet_list.head;
+    bullet *prev_bullet;
+
+    while(current_bullet->next != deleting_bullet && current_bullet != NULL){
+        prev_bullet = current_bullet;
+        current_bullet = current_bullet->next;
+    }
+
+    // by this point, we have current_bullet->next is what we need to remove, OR
+    // OR the bullet is at the start of the list    
+    prev_bullet->next = current_bullet->next;
+    printf("FREEING BULLET at addr %d. t = %d\n", deleting_bullet, frame_count);
+    bullet_list.num--;
+    num_bullets--;
+    free(deleting_bullet);
+    return;
 }
 
 void update_bullets(){
-    for(int k = 0; k < num_bullets; k++){
-        // move bullet in space
-        bullet_container[k]->x += bullet_container[k]->dx * bullet_container[k]->speed;
-        bullet_container[k]->y += bullet_container[k]->dy * bullet_container[k]->speed;
-        bullet_container[k]->life_time--;
+    bullet *current_bullet = bullet_list.head;
 
-        if(bullet_container[k]->life_time < 0){
+    while(current_bullet != NULL){
+       // move bullet in space
+        current_bullet->x += current_bullet->dx * current_bullet->speed;
+        current_bullet->y += current_bullet->dy * current_bullet->speed;
+        current_bullet->life_time--;
+
+        if(current_bullet->life_time < 0){
             // delete this bullet if its lifetime is out!
-            destroy_bullet(bullet_container[k]);
+            printf("destroy bullet at addr %d. t = %d\n", current_bullet, frame_count);
+            destroy_bullet(current_bullet);
         }
+        //printf("moved bullet at addr %d\n", current_bullet);
+        //printf("next bullet is at %d\n", current_bullet->next);
+        current_bullet = current_bullet->next;
     }
+    //printf("done bullets\n");
 }
 
 void clear_bullet_array(){
-    for(int k = 0; k < num_bullets; k++){
-        free(bullet_container[k]);
+    bullet *current_bullet = bullet_list.head;
+    while(current_bullet != NULL){
+        free(current_bullet);
     }
-    free(bullet_container);
+    num_bullets = 0;
+    bullet_list.num = 0;
 }
 
 void shoot(ship *player){
@@ -413,6 +453,7 @@ void shoot(ship *player){
             new_bullet->damage = 50;
             new_bullet->life_time = 60;
             new_bullet->speed = 2;
+            printf("shooting! %d bullets atm. t = %d\n", num_bullets, frame_count);
         }
     }else{
         // cant shoot, weird scenario made in case
@@ -541,8 +582,8 @@ int main(void){
     int h_drawn = 0;
 
     // BULLET DYNAMIC ARRAY SETUP    
-    bullet_container = (bullet**) malloc(total_bullet_memory * sizeof(bullet*));
-
+    printf("%d", sizeof(bullet));
+    bullet *current_bullet;
     while(1){
         LED_Out = 0;
         handle_Keyboard(&p1_keyboard, &current_input);
@@ -551,7 +592,7 @@ int main(void){
         // wait for vsync and update buffer positions
 		wait_for_vsync();
 		pixel_buffer_start = *(pixel_ctrl_ptr + 1);
-
+        frame_count++;
         // VGA ERASING OLD POSITIONS
 		// erase old boxes
 		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
@@ -568,11 +609,14 @@ int main(void){
         }
 
         //erase old bullets
-        for(int k = 0; k < num_bullets; k++){
-            draw_box(bullet_container[k]->x - bullet_container[k]->dx * bullet_container[k]->speed, 
-                    bullet_container[k]->y - bullet_container[k]->dy * bullet_container[k]->speed,
+        current_bullet = bullet_list.head;
+        while(current_bullet != NULL){
+            draw_box(current_bullet->x - current_bullet->dx *current_bullet->speed, 
+                    current_bullet->y - current_bullet->dy * current_bullet->speed,
                     4, 4, 0);
+            current_bullet = current_bullet->next;
         }
+
 
         // PHYSICS STEPPING
         player1_ship.dy = p1_keyboard.directions[1] - p1_keyboard.directions[0];
@@ -590,13 +634,13 @@ int main(void){
 
         // VGA DRAWING UPDATED POSITIONS
         // drawing bullets out
-        for(int k = 0; k < num_bullets; k++){
-            if(bullet_container != NULL){
-                draw_box(bullet_container[k]->x - bullet_container[k]->dx * bullet_container[k]->speed, 
-                    bullet_container[k]->y - bullet_container[k]->dy * bullet_container[k]->speed,
+
+        current_bullet = bullet_list.head;
+        while(current_bullet != NULL){
+            draw_box(current_bullet->x - current_bullet->dx *current_bullet->speed, 
+                    current_bullet->y - current_bullet->dy * current_bullet->speed,
                     4, 4, color_list[6]);
-            }
-            
+            current_bullet = current_bullet->next;
         }
 
         player1_ship.old_x = player1_ship.x;
@@ -616,6 +660,8 @@ int main(void){
             LED_Out += 0x100;
         }
         *LEDs = LED_Out;
+
+
     }
 }
 
