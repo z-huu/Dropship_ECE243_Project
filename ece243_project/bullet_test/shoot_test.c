@@ -108,7 +108,7 @@ typedef struct hitbox {
 	unsigned int y2;
 } hitbox;
 
-#define hitbox_total 3
+#define hitbox_total 1
 bool collision_frame[400][300];
 
 /* KEYBOARD DECLARATION
@@ -316,6 +316,7 @@ typedef struct bullet{
     int damage;
     int speed;
     int life_time;
+    int size;
     struct bullet* next;
 }bullet;
 
@@ -328,6 +329,7 @@ bullet_linked_list bullet_list;
 int num_bullets = 0;
 int total_bullet_memory = 10;
 int frame_count = 0;
+#define bullet_size 5
 
 bullet* create_bullet(){
     //create the bullet
@@ -412,11 +414,84 @@ void update_bullets(){
 
     while(current_bullet != NULL){
        // move bullet in space
-        current_bullet->x += current_bullet->dx * current_bullet->speed;
-        current_bullet->y += current_bullet->dy * current_bullet->speed;
-        current_bullet->life_time--;
+        // X Direction
+        int x_offset = 0;
+        bool x_collide = false;
+        int y_offset = 0;
+        bool y_collide = false;
+        bool player_hit = false;
 
-        if(current_bullet->life_time < 0){
+        if(bullet_container[k]->dx > 0){
+            x_offset = bullet_container[k]->size;
+        }
+
+        //current_bullet->x += current_bullet->dx * current_bullet->speed;
+        current_//bullet->y += current_bullet->dy * current_bullet->speed;
+
+        current_if(bullet->x + bullet_container[k]->speed * bullet_container[k]->dx > x_min_threshold 
+        && bullet_container[k]->x + bullet_container[k]->speed * bullet_container[k]->dx < x_max_threshold - bullet_container[k]->size - 1){
+            // x_c will be the distance we have travelled so far
+            for(int x_c = 0; 
+            x_c < bullet_container[k]->speed && !x_collide && !player_hit && bullet_container[k]->dx != 0; 
+            x_c++){
+                // scan the ship's height, each horizontal pixel step
+                for(int y_c = bullet_container[k]->y; 
+                y_c < bullet_container[k]->y + ship_size; 
+                y_c++){
+                    // insert player checks here, BEFORE checking wall hit
+
+                    if(bullet_container[k]->x > x_min_threshold
+                    && bullet_container[k]->x < x_max_threshold
+                    && collision_frame[bullet_container[k]->x + x_offset + (bullet_container[k]->dx)][y_c]){
+                        x_collide = true;
+                        bullet_container[k]->x -= bullet_container[k]->dx;
+                    }
+                }
+                bullet_container[k]->x += bullet_container[k]->dx;
+            }
+        }else{
+            x_collide = true;
+        }
+
+        // Y DIRECTION
+        
+        if(current_bullet->dy > 0){
+            y_offset = bullet_container[k]->size;
+        }
+
+        if(bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy > y_min_threshold 
+        && bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy < y_max_threshold - bullet_container[k]->size - 1){
+            bool y_collide = false;
+            // y_c will be the distance we have travelled so far
+            for(int y_c = 0; 
+            y_c < bullet_container[k]->speed && !y_collide && !player_hit && bullet_container[k]->dy != 0; 
+            y_c++){
+                // scan the ship's length, each vertical pixel step
+                for(int x_c = bullet_container[k]->x; 
+                x_c < bullet_container[k]->x + bullet_container[k]->size; 
+                x_c++){
+                    // insert player checks here, BEFORE checking wall hit.
+
+
+                    if(bullet_container[k]->y > y_min_threshold
+                    && bullet_container[k]->y < y_max_threshold
+                    && collision_frame[x_c][bullet_container[k]->y + y_offset + (bullet_container[k]->dy)]){
+                        y_collide = true;
+                        bullet_container[k]->y -= bullet_container[k]->dy;
+                    }
+                }
+                bullet_container[k]->y += bullet_container[k]->dy;
+            }
+        }else{
+            y_collide = true;
+        }
+
+        if(player_hit){
+            // damage player THEN destroy bullet
+        }else if(x_collide || y_collide){
+            // bullet collided with wall!
+            destroy_bullet(bullet_container[k]);
+        }else if(bullet_container[k]->life_time < 0){
             // delete this bullet if its lifetime is out!
             printf("destroy bullet at addr %d. t = %d\n", current_bullet, frame_count);
             destroy_bullet(current_bullet);
@@ -428,6 +503,7 @@ void update_bullets(){
     //printf("done bullets\n");
 }
 
+/*
 void clear_bullet_array(){
     bullet *current_bullet = bullet_list.head;
     while(current_bullet != NULL){
@@ -436,6 +512,7 @@ void clear_bullet_array(){
     num_bullets = 0;
     bullet_list.num = 0;
 }
+*/
 
 void shoot(ship *player){
     // take position and orientation data to create a bullet
@@ -452,7 +529,8 @@ void shoot(ship *player){
             new_bullet->dy = player->orientationY;
             new_bullet->damage = 50;
             new_bullet->life_time = 60;
-            new_bullet->speed = 2;
+            new_bullet->speed = 1;
+            new_bullet->size = 4;
             printf("shooting! %d bullets atm. t = %d\n", num_bullets, frame_count);
         }
     }else{
@@ -501,8 +579,8 @@ int main(void){
 
 	// randomize locations of hitboxes and their sizes
 	for (int k = 0; k < hitbox_total; k++) {
-		colliders[k].x1 = 5 + 35*k;
-		colliders[k].y1 = 5 + 30*k;
+		colliders[k].x1 = 55 + 35*(rand()%3);
+		colliders[k].y1 = 55 + 30*(rand()%3);
 
 		do {
 		colliders[k].x2 = rand() % x_max -1;
@@ -575,7 +653,7 @@ int main(void){
     ship player1_ship;
     player1_ship.x = 50;
     player1_ship.y = 50;
-    player1_ship.fire_rate = 15;
+    player1_ship.fire_rate = 5;
     player1_ship.frame_count = 0;
     player1_ship.canShoot = false;
 
@@ -627,9 +705,11 @@ int main(void){
 
         // handle shoot cooldown and whether or not we have fired
         update_ship_on_frame(&player1_ship);
+        
         if(player1_ship.canShoot){
             shoot(&player1_ship);
         }
+
         update_bullets();
 
         // VGA DRAWING UPDATED POSITIONS
