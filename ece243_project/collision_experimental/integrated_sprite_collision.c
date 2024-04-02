@@ -453,7 +453,7 @@ void bullet_helper(int xc, int yc, int x, int y);
 
 int main(void){
     // VGA SET UP
-    	volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
+    volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
 	// declare other variables(not shown)
 	// initialize location and direction of rectangles(not shown)
 
