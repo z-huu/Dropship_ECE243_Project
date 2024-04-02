@@ -421,33 +421,33 @@ void update_bullets(){
         bool y_collide = false;
         bool player_hit = false;
 
-        if(bullet_container[k]->dx > 0){
-            x_offset = bullet_container[k]->size;
+        if(current_bullet->dx > 0){
+            x_offset = current_bullet->size;
         }
 
         //current_bullet->x += current_bullet->dx * current_bullet->speed;
-        current_//bullet->y += current_bullet->dy * current_bullet->speed;
+        //bullet->y += current_bullet->dy * current_bullet->speed;
 
-        current_if(bullet->x + bullet_container[k]->speed * bullet_container[k]->dx > x_min_threshold 
-        && bullet_container[k]->x + bullet_container[k]->speed * bullet_container[k]->dx < x_max_threshold - bullet_container[k]->size - 1){
+        if(current_bullet->x + current_bullet->speed * current_bullet->dx > x_min_threshold 
+        && current_bullet->x + current_bullet->speed * current_bullet->dx < x_max_threshold - current_bullet->size - 1){
             // x_c will be the distance we have travelled so far
             for(int x_c = 0; 
-            x_c < bullet_container[k]->speed && !x_collide && !player_hit && bullet_container[k]->dx != 0; 
+            x_c < current_bullet->speed && !x_collide && !player_hit && current_bullet->dx != 0; 
             x_c++){
                 // scan the ship's height, each horizontal pixel step
-                for(int y_c = bullet_container[k]->y; 
-                y_c < bullet_container[k]->y + ship_size; 
+                for(int y_c = current_bullet->y; 
+                y_c < current_bullet->y + ship_size; 
                 y_c++){
                     // insert player checks here, BEFORE checking wall hit
 
-                    if(bullet_container[k]->x > x_min_threshold
-                    && bullet_container[k]->x < x_max_threshold
-                    && collision_frame[bullet_container[k]->x + x_offset + (bullet_container[k]->dx)][y_c]){
+                    if(current_bullet->x > x_min_threshold
+                    && current_bullet->x < x_max_threshold
+                    && collision_frame[current_bullet->x + x_offset + (current_bullet->dx)][y_c]){
                         x_collide = true;
-                        bullet_container[k]->x -= bullet_container[k]->dx;
+                        current_bullet->x -= current_bullet->dx;
                     }
                 }
-                bullet_container[k]->x += bullet_container[k]->dx;
+                current_bullet->x += current_bullet->dx;
             }
         }else{
             x_collide = true;
@@ -456,31 +456,31 @@ void update_bullets(){
         // Y DIRECTION
         
         if(current_bullet->dy > 0){
-            y_offset = bullet_container[k]->size;
+            y_offset = current_bullet->size;
         }
 
-        if(bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy > y_min_threshold 
-        && bullet_container[k]->y + bullet_container[k]->speed * bullet_container[k]->dy < y_max_threshold - bullet_container[k]->size - 1){
+        if(current_bullet->y + current_bullet->speed * current_bullet->dy > y_min_threshold 
+        && current_bullet->y + current_bullet->speed * current_bullet->dy < y_max_threshold - current_bullet->size - 1){
             bool y_collide = false;
             // y_c will be the distance we have travelled so far
             for(int y_c = 0; 
-            y_c < bullet_container[k]->speed && !y_collide && !player_hit && bullet_container[k]->dy != 0; 
+            y_c < current_bullet->speed && !y_collide && !player_hit && current_bullet->dy != 0; 
             y_c++){
                 // scan the ship's length, each vertical pixel step
-                for(int x_c = bullet_container[k]->x; 
-                x_c < bullet_container[k]->x + bullet_container[k]->size; 
+                for(int x_c = current_bullet->x; 
+                x_c < current_bullet->x + current_bullet->size; 
                 x_c++){
                     // insert player checks here, BEFORE checking wall hit.
 
 
-                    if(bullet_container[k]->y > y_min_threshold
-                    && bullet_container[k]->y < y_max_threshold
-                    && collision_frame[x_c][bullet_container[k]->y + y_offset + (bullet_container[k]->dy)]){
+                    if(current_bullet->y > y_min_threshold
+                    && current_bullet->y < y_max_threshold
+                    && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
                         y_collide = true;
-                        bullet_container[k]->y -= bullet_container[k]->dy;
+                        current_bullet->y -= current_bullet->dy;
                     }
                 }
-                bullet_container[k]->y += bullet_container[k]->dy;
+                current_bullet->y += current_bullet->dy;
             }
         }else{
             y_collide = true;
@@ -490,8 +490,8 @@ void update_bullets(){
             // damage player THEN destroy bullet
         }else if(x_collide || y_collide){
             // bullet collided with wall!
-            destroy_bullet(bullet_container[k]);
-        }else if(bullet_container[k]->life_time < 0){
+            destroy_bullet(current_bullet);
+        }else if(current_bullet->life_time < 0){
             // delete this bullet if its lifetime is out!
             printf("destroy bullet at addr %d. t = %d\n", current_bullet, frame_count);
             destroy_bullet(current_bullet);
@@ -691,7 +691,7 @@ int main(void){
         while(current_bullet != NULL){
             draw_box(current_bullet->x - current_bullet->dx *current_bullet->speed, 
                     current_bullet->y - current_bullet->dy * current_bullet->speed,
-                    4, 4, 0);
+                    current_bullet->size, current_bullet->size, 0);
             current_bullet = current_bullet->next;
         }
 
@@ -719,7 +719,7 @@ int main(void){
         while(current_bullet != NULL){
             draw_box(current_bullet->x - current_bullet->dx *current_bullet->speed, 
                     current_bullet->y - current_bullet->dy * current_bullet->speed,
-                    4, 4, color_list[6]);
+                    current_bullet->size, current_bullet->size, color_list[6]);
             current_bullet = current_bullet->next;
         }
 
