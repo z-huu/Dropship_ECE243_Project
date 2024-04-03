@@ -691,7 +691,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPUP_HEIGHT/2))) + (j-(SHIPUP_WIDTH/2));
                 plot_pixel(j - (SHIPUP_WIDTH / 2), i - (SHIPUP_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -708,7 +708,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPUPRIGHT_HEIGHT/2))) + (j-(SHIPUPRIGHT_WIDTH/2));
                 plot_pixel(j - (SHIPRIGHT_WIDTH / 2), i - (SHIPRIGHT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -725,7 +725,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPDOWN_HEIGHT/2))) + (j-(SHIPDOWN_WIDTH/2));
                 plot_pixel(j - (SHIPDOWN_WIDTH / 2), i - (SHIPDOWN_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -742,7 +742,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPLEFT_HEIGHT/2))) + (j-(SHIPLEFT_WIDTH/2));
                 plot_pixel(j - (SHIPLEFT_WIDTH / 2), i - (SHIPLEFT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -759,7 +759,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPUPRIGHT_HEIGHT/2))) + (j-(SHIPUPRIGHT_WIDTH/2));
                 plot_pixel(j - (SHIPUPRIGHT_WIDTH / 2), i - (SHIPUPRIGHT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -776,7 +776,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPUPLEFT_HEIGHT/2))) + (j-(SHIPUPLEFT_WIDTH/2));
                 plot_pixel(j - (SHIPUPLEFT_WIDTH / 2), i - (SHIPUPLEFT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -793,7 +793,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPDOWNLEFT_HEIGHT/2))) + (j-(SHIPDOWNLEFT_WIDTH/2));
                 plot_pixel(j - (SHIPDOWNLEFT_WIDTH / 2), i - (SHIPDOWNLEFT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
@@ -810,7 +810,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * i) + j;
+                abs_counter = (VGA_x * (i-(SHIPDOWNRIGHT_HEIGHT/2))) + (j-(SHIPDOWNRIGHT_WIDTH/2));
                 plot_pixel(j - (SHIPDOWNRIGHT_WIDTH / 2), i - (SHIPDOWNRIGHT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
