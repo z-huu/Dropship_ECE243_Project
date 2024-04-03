@@ -708,7 +708,7 @@ void erase_ship(ship *player) {
                     counter++;
                     continue;
                 }
-                abs_counter = (VGA_x * (i-(SHIPUPRIGHT_HEIGHT/2))) + (j-(SHIPUPRIGHT_WIDTH/2));
+                abs_counter = (VGA_x * (i-(SHIPRIGHT_HEIGHT/2))) + (j-(SHIPRIGHT_WIDTH/2));
                 plot_pixel(j - (SHIPRIGHT_WIDTH / 2), i - (SHIPRIGHT_HEIGHT / 2), background[abs_counter]);
                 counter++;
             }
