@@ -317,6 +317,8 @@ typedef struct bullet{
     int speed;
     int life_time;
     int size;
+    int bounce_count;
+    bool wall_pen;
     struct bullet* next;
 }bullet;
 
@@ -331,37 +333,27 @@ int total_bullet_memory = 10;
 int frame_count = 0;
 #define bullet_size 5
 
+// Inserts bullet into head of linked list
 bullet* create_bullet(){
     //create the bullet
     bullet *new_bullet = (bullet*) malloc(sizeof(bullet));
     bullet *current_bullet;
     int k = 0;
-    if(new_bullet){
-        printf("ALLOCATED new bullet at addr %d. t = %d\n", new_bullet, frame_count);
-        new_bullet->next = NULL;
-        if(bullet_list.head == NULL){
-            bullet_list.head = new_bullet;
-        }else{
-            // cycle to head of linked list
-            current_bullet = bullet_list.head;
 
-            while(current_bullet->next != NULL){
-                current_bullet = current_bullet->next;
-            }
-            
-            current_bullet->next = new_bullet;
-            printf("added after addr %d\n", current_bullet);
-        }
+    if(new_bullet){
+        new_bullet->next = bullet_list.head;
+        bullet_list.head = new_bullet;
         bullet_list.num++;
         num_bullets++;
+        printf("ALLOCATED new bullet at addr %d. Next addr %d t = %d\n", new_bullet, new_bullet->next, frame_count);
 
-
-        current_bullet = bullet_list.head;
-        k = 0;
-        while(current_bullet != NULL){
-            printf("BULLET #%d POS (%d, %d)\n", k, current_bullet->x, current_bullet->y);
-            current_bullet = current_bullet->next;
-        }
+        //current_bullet = bullet_list.head;
+        //k = 0;
+        //while(current_bullet != NULL){
+        //    printf("BULLET #%d POS (%d, %d). ADDR: %d\n", k, current_bullet->x, current_bullet->y, current_bullet);
+        //    current_bullet = current_bullet->next;
+        //    k++;
+        //}
     
         return new_bullet;
     }
@@ -374,7 +366,7 @@ void destroy_bullet(bullet* deleting_bullet){
     // check if list is empty to begin with
     if(bullet_list.head == NULL){
         return;
-    }
+    }   
 
     // avoid freeing NULL address
     if(deleting_bullet == NULL){
@@ -384,7 +376,8 @@ void destroy_bullet(bullet* deleting_bullet){
     // check if deleting bullet is the head...
     if(bullet_list.head == deleting_bullet){
         bullet_list.head = deleting_bullet->next;
-        printf("FREEING BULLET at addr %d. t = %d\n", deleting_bullet, frame_count);
+        printf("FREEING BULLET HEAD at addr %d. t = %d\n", deleting_bullet, frame_count);
+        printf("Prev Bullet Addr: %d. Next Bullet Addr: %d. t = %d\n", 0, deleting_bullet->next, frame_count);
         free(deleting_bullet);
         num_bullets--;
         bullet_list.num--;
@@ -394,15 +387,21 @@ void destroy_bullet(bullet* deleting_bullet){
     bullet *current_bullet = bullet_list.head;
     bullet *prev_bullet;
 
-    while(current_bullet->next != deleting_bullet && current_bullet != NULL){
+    while(current_bullet != deleting_bullet && current_bullet != NULL){
         prev_bullet = current_bullet;
         current_bullet = current_bullet->next;
     }
 
     // by this point, we have current_bullet->next is what we need to remove, OR
-    // OR the bullet is at the start of the list    
-    prev_bullet->next = current_bullet->next;
+    // OR the bullet is at the start of the list
+    if(deleting_bullet->next == NULL){
+        prev_bullet->next = NULL;
+    }else{
+        prev_bullet->next = deleting_bullet->next;
+
+    }
     printf("FREEING BULLET at addr %d. t = %d\n", deleting_bullet, frame_count);
+    printf("Prev Bullet Addr: %d. Next Bullet Addr: %d. t = %d\n", prev_bullet, prev_bullet->next, frame_count);
     bullet_list.num--;
     num_bullets--;
     free(deleting_bullet);
@@ -411,8 +410,8 @@ void destroy_bullet(bullet* deleting_bullet){
 
 void update_bullets(){
     bullet *current_bullet = bullet_list.head;
-
-    while(current_bullet != NULL){
+    bool is_tail = false;
+    while(current_bullet != NULL && !is_tail){
        // move bullet in space
         // X Direction
         int x_offset = 0;
@@ -429,14 +428,14 @@ void update_bullets(){
         //bullet->y += current_bullet->dy * current_bullet->speed;
 
         if(current_bullet->x + current_bullet->speed * current_bullet->dx > x_min_threshold 
-        && current_bullet->x + current_bullet->speed * current_bullet->dx < x_max_threshold - current_bullet->size - 1){
+        && current_bullet->x + current_bullet->speed * current_bullet->dx < x_max_threshold - current_bullet->size){
             // x_c will be the distance we have travelled so far
             for(int x_c = 0; 
             x_c < current_bullet->speed && !x_collide && !player_hit && current_bullet->dx != 0; 
             x_c++){
                 // scan the ship's height, each horizontal pixel step
                 for(int y_c = current_bullet->y; 
-                y_c < current_bullet->y + ship_size; 
+                y_c < current_bullet->y + current_bullet->size; 
                 y_c++){
                     // insert player checks here, BEFORE checking wall hit
 
@@ -460,7 +459,7 @@ void update_bullets(){
         }
 
         if(current_bullet->y + current_bullet->speed * current_bullet->dy > y_min_threshold 
-        && current_bullet->y + current_bullet->speed * current_bullet->dy < y_max_threshold - current_bullet->size - 1){
+        && current_bullet->y + current_bullet->speed * current_bullet->dy < y_max_threshold - current_bullet->size){
             bool y_collide = false;
             // y_c will be the distance we have travelled so far
             for(int y_c = 0; 
@@ -471,8 +470,6 @@ void update_bullets(){
                 x_c < current_bullet->x + current_bullet->size; 
                 x_c++){
                     // insert player checks here, BEFORE checking wall hit.
-
-
                     if(current_bullet->y > y_min_threshold
                     && current_bullet->y < y_max_threshold
                     && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
@@ -490,15 +487,33 @@ void update_bullets(){
             // damage player THEN destroy bullet
         }else if(x_collide || y_collide){
             // bullet collided with wall!
-            destroy_bullet(current_bullet);
+
+            if(current_bullet->bounce_count > 0){
+                // bounce the bullet based on type of collision
+                current_bullet->dx *= (x_collide) ? -1 : 1;
+                current_bullet->dy *= (y_collide) ? -1 : 1;
+                //printf("Bounce (addr %d): (dx, dy) = (%d, %d). t = %d\n", current_bullet, current_bullet->dx, current_bullet->dy, frame_count);
+                current_bullet->bounce_count--;
+            }else{
+                // no more bounces, delete bullet on collision
+                //printf("Collision: Destroy bullet at addr %d, t = %d\n", current_bullet, frame_count);
+                destroy_bullet(current_bullet);
+            }
+            
         }else if(current_bullet->life_time < 0){
             // delete this bullet if its lifetime is out!
-            printf("destroy bullet at addr %d. t = %d\n", current_bullet, frame_count);
+            //printf("Lifespan: Destroy bullet at addr %d. t = %d\n", current_bullet, frame_count);
             destroy_bullet(current_bullet);
         }
         //printf("moved bullet at addr %d\n", current_bullet);
         //printf("next bullet is at %d\n", current_bullet->next);
-        current_bullet = current_bullet->next;
+        current_bullet->life_time--;
+        if(current_bullet->next == NULL){
+            is_tail = true;
+        }else{
+            current_bullet = current_bullet->next;
+
+        }
     }
     //printf("done bullets\n");
 }
@@ -528,9 +543,10 @@ void shoot(ship *player){
             new_bullet->dx = player->orientationX;
             new_bullet->dy = player->orientationY;
             new_bullet->damage = 50;
-            new_bullet->life_time = 60;
-            new_bullet->speed = 1;
+            new_bullet->life_time = 120;
+            new_bullet->speed = 2;
             new_bullet->size = 4;
+            new_bullet->bounce_count = 3;
             printf("shooting! %d bullets atm. t = %d\n", num_bullets, frame_count);
         }
     }else{
