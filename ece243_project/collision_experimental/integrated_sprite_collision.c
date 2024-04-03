@@ -697,7 +697,7 @@ void erase_ship(ship *player) {
             }
         }
     }
-    else if (dx == 1 && dy == 0)
+    else if (dx == 1 && dy == 0) // Stuff is shifted down by a row when going right.. Don't know if is because of drawing or erasing
     { // ship Right
         for (int i = y; i < y + SHIPRIGHT_HEIGHT; i++)
         {
