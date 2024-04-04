@@ -222,6 +222,7 @@ typedef struct spaceship
     int health;
     int fire_rate;
     int frame_count;
+    int size;
     bool canShoot;
     bool wantShoot;
 } ship;
@@ -566,6 +567,55 @@ void update_ship_on_frame(ship *player){
     }
 }
 
+int shrink_hori_rate = 4;
+int shrink_vert_rate = 3;
+int shrink_delay = 20;
+int ring_x = 320/2;
+int ring_y = 240/2;
+int ring_center_x = 320/2; // to be randomized to be centered at a random pt, b/n 110-230 (ie midpt = 170, range of 60)
+int ring_center_y = 240/2; // to be randomized to be centered at a random pt, b/n 75-165 (midpt = 120, range of 45)
+const int minimum_ring_x = 80; 
+const int minimum_ring_y = 60;
+int ring_initial_delay = 120;
+
+bool player_collide(int x, int y, ship *player){
+    if(x > player->x || x < player->x + player->size){
+
+    }
+}
+
+void ring_update(){
+    if(frame_count > ring_initial_delay && (frame_count%shrink_delay) == 0){
+        if(ring_x <= minimum_ring_x && ring_y <= minimum_ring_y){
+
+        }else{
+            printf("SHRINKING RING. Size: (%d, %d). t = %d\n", ring_x, ring_y, frame_count);
+            // shrink ring now
+            // NOTE
+            // currently shrinking in a box like shape
+            // horizontal shrink rate determined by shrink_hori_rate
+            // vertical shrink rate determined by shrink_vert_rate
+            ring_x = (ring_x - shrink_hori_rate > minimum_ring_x) ? ring_x - shrink_hori_rate : minimum_ring_x;
+            ring_y = (ring_y - shrink_vert_rate > minimum_ring_y) ? ring_y - shrink_vert_rate : minimum_ring_y;
+            
+            // apply ring changes onto collision frame!
+            for(int x_c = 0; x_c < VGA_x; x_c++){
+                for(int y_c = 0; y_c < VGA_y; y_c++){
+                    // if the coordinate is OUTSIDE of ring, set to true!
+                    if(x_c < (ring_center_x - ring_x) || x_c > (ring_center_x + ring_x)){
+                        collision_frame[x_c][y_c] = true;
+
+                    }
+                    if(y_c < (ring_center_y - ring_y) || y_c > (ring_center_x + ring_y)){
+                        // out of ring, set to true!
+                        collision_frame[x_c][y_c] = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
 int main(void){
     // VGA SET UP
     volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
@@ -636,8 +686,8 @@ int main(void){
     int LED_Out = 0;
 
     // PLAYER 1 KEYBOARD SET UP
-    const key_code player1_movement_bindings[inputs_per_player];
     bool p1_directions[inputs_per_player];
+    bool p2_directions[inputs_per_player];
 
     player_keyboard p1_keyboard = {
         .is_breaking = 0,
@@ -655,11 +705,30 @@ int main(void){
         .directions = p1_directions,
         .keyboard_ptr = ps2_ptr1
     };
-    
     p1_keyboard.keyboard_ptr->data = 0xF4;
     p1_keyboard.keyboard_ptr->data = 0xFF;
 
-    char current_input;
+    player_keyboard p2_keyboard = {
+        .is_breaking = 0,
+        .is_multi_byte = 0,
+        .bindings = {
+            {0x1d, false}, // W
+            {0x1b, false}, // S
+            {0x1c, false}, // A
+            {0x23, false}, // D
+            {0x75, true}, // UP ARROW
+            {0x72, true}, // DOWN ARROW
+            {0x6b, true}, // LEFT ARROW
+            {0x74, true} // RIGHT ARROW
+        },
+        .directions = p2_directions,
+        .keyboard_ptr = ps2_ptr2
+    };
+    p2_keyboard.keyboard_ptr->data = 0xF4;
+    p2_keyboard.keyboard_ptr->data = 0xFF;
+
+    char current_input_p1;
+    char current_input_p2;
 
     // TIMER SET UP, may not be needed...
     timer_ptr->start_low_value = (timer_frequency/frame_rate);
@@ -672,6 +741,15 @@ int main(void){
     player1_ship.fire_rate = 5;
     player1_ship.frame_count = 0;
     player1_ship.canShoot = false;
+    player1_ship.size = ship_size;
+    
+    ship player2_ship;
+    player2_ship.x = 150;
+    player2_ship.y = 150;
+    player2_ship.fire_rate = 5;
+    player2_ship.frame_count = 0;
+    player2_ship.canShoot = false;
+    player2_ship.size = ship_size;
 
     int h_drawn = 0;
 
@@ -680,8 +758,8 @@ int main(void){
     bullet *current_bullet;
     while(1){
         LED_Out = 0;
-        handle_Keyboard(&p1_keyboard, &current_input);
-
+        handle_Keyboard(&p1_keyboard, &current_input_p1);
+        handle_Keyboard(&p2_keyboard, &current_input_p2);
         // RENDER STEP
         // wait for vsync and update buffer positions
 		wait_for_vsync();
@@ -690,6 +768,7 @@ int main(void){
         // VGA ERASING OLD POSITIONS
 		// erase old boxes
 		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
+		draw_box(player2_ship.old_x, player2_ship.old_y, ship_size, ship_size, 0);
         
         // drawing hitboxes
         if(h_drawn < 2){
@@ -701,6 +780,7 @@ int main(void){
 		    } 
             h_drawn++;
         }
+
 
         //erase old bullets
         current_bullet = bullet_list.head;
@@ -717,18 +797,57 @@ int main(void){
         player1_ship.dx = p1_keyboard.directions[3] - p1_keyboard.directions[2];
         player1_ship.orientationY = p1_keyboard.directions[5] - p1_keyboard.directions[4];
         player1_ship.orientationX = p1_keyboard.directions[7] - p1_keyboard.directions[6];
+        
+        player2_ship.dy = p2_keyboard.directions[1] - p2_keyboard.directions[0];
+        player2_ship.dx = p2_keyboard.directions[3] - p2_keyboard.directions[2];
+        player2_ship.orientationY = p2_keyboard.directions[5] - p2_keyboard.directions[4];
+        player2_ship.orientationX = p2_keyboard.directions[7] - p2_keyboard.directions[6];
+        
         handle_ship_physics(&player1_ship);
+        handle_ship_physics(&player2_ship);
 
         // handle shoot cooldown and whether or not we have fired
         update_ship_on_frame(&player1_ship);
-        
+        update_ship_on_frame(&player2_ship);
+
         if(player1_ship.canShoot){
             shoot(&player1_ship);
         }
+        if(player2_ship.canShoot){
+            shoot(&player2_ship);
+        }
 
         update_bullets();
+        ring_update();
 
         // VGA DRAWING UPDATED POSITIONS
+        // draw out updated ring!
+        if(frame_count > ring_initial_delay && (frame_count % shrink_delay == 0 || frame_count % shrink_delay == 1 )){
+            if(ring_x <= minimum_ring_x && ring_y <= minimum_ring_y){
+
+            }else{
+                // ring has changed!
+                for(int x_c = 0; x_c < VGA_x; x_c++){
+                    for(int y_c = 0; y_c < VGA_y; y_c++){
+                        // if the coordinate is OUTSIDE of ring, set to true!
+                        if(x_c < (ring_center_x - ring_x) || x_c > (ring_center_x + ring_x)){
+                            // out of ring, set to true!
+                            if(collision_frame[x_c][y_c]){
+                                plot_pixel(x_c, y_c, color_list[6]);
+
+                            }
+                        }
+                        if(y_c < (ring_center_y - ring_y) || y_c > (ring_center_x + ring_y)){
+                            // out of ring, set to true!
+                            if(collision_frame[x_c][y_c]){
+                                plot_pixel(x_c, y_c, color_list[6]);
+
+                            }       
+                        }
+                    }
+                }
+            }
+        }
         // drawing bullets out
 
         current_bullet = bullet_list.head;
@@ -741,11 +860,14 @@ int main(void){
 
         player1_ship.old_x = player1_ship.x;
         player1_ship.old_y = player1_ship.y;
+         
+        player2_ship.old_x = player2_ship.x;
+        player2_ship.old_y = player2_ship.y;
 
 		// draw new boxes at shifted positions
         //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
 		draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
-
+        draw_box(player2_ship.x, player2_ship.y, ship_size, ship_size, color_list[7]);
         // output data onto LEDS
         for(int k = 0; k < inputs_per_player; k++){
             if(p1_keyboard.directions[k]){
@@ -756,8 +878,6 @@ int main(void){
             LED_Out += 0x100;
         }
         *LEDs = LED_Out;
-
-
     }
 }
 
