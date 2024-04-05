@@ -255,8 +255,9 @@ typedef struct physics_holder{
 } physics_holder;
 
 bool player_collide(int x, int y, ship *player){
-    if(x >= player->x  && x < player->x + player->size){
-        if(y >= player->y  && y < player->y + player->size){
+    if((x >= player->x - player->size && x <= player->x + player->size)){
+        printf("in X\n");
+        if((y >= player->y - player->size && y <= player->y + player->size)){
             return true;
         }
     }
@@ -493,11 +494,11 @@ void update_bullets(){
                 y_c++){
                     // insert player checks here, BEFORE checking wall hit
                     if(player_collide(x_c, y_c, opposing_player)){
+                        printf("t = %d. PLR HIT X\n", frame_count);
                         player_hit = true;
-                    }
-                    if(current_bullet->x > x_min_threshold
-                    && current_bullet->x < x_max_threshold
-                    && collision_frame[current_bullet->x + x_offset + (current_bullet->dx)][y_c]){
+                    }else if(current_bullet->x > x_min_threshold
+                            && current_bullet->x < x_max_threshold
+                            && collision_frame[current_bullet->x + x_offset + (current_bullet->dx)][y_c]){
                         x_collide = true;
                         current_bullet->x -= current_bullet->dx * pixel_step;
                     }
@@ -526,11 +527,11 @@ void update_bullets(){
                 x_c++){
                     // insert player checks here, BEFORE checking wall hit.
                     if(player_collide(x_c, y_c, opposing_player)){
+                        printf("t = %d. PLR HIT Y\n", frame_count);
                         player_hit = true;
-                    }
-                    if(current_bullet->y > y_min_threshold
-                    && current_bullet->y < y_max_threshold
-                    && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
+                    } else if(current_bullet->y > y_min_threshold
+                            && current_bullet->y < y_max_threshold
+                            && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
                         y_collide = true;
                         current_bullet->y -= current_bullet->dy * pixel_step;
                     }
@@ -548,7 +549,7 @@ void update_bullets(){
             destroy_bullet(current_bullet);
         }else if(x_collide || y_collide){
             // bullet collided with wall!
-
+            //printf("t = %d. Opp PLR = %d, P1 = %d, P2 = %d\n", frame_count, opposing_player, &player1_ship, &player2_ship);
             if(current_bullet->bounce_count > 0){
                 // bounce the bullet based on type of collision
                 current_bullet->dx *= (x_collide) ? -1 : 1;
@@ -607,7 +608,7 @@ void shoot(ship *player){
                 new_bullet->y = player->y;
                 new_bullet->dx = player->orientationX;
                 new_bullet->dy = player->orientationY;
-                new_bullet->damage = 50;
+                new_bullet->damage = 10;
                 new_bullet->life_time = 120;
                 new_bullet->speed = 2;
                 new_bullet->size = 4;
