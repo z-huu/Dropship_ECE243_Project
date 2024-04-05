@@ -227,6 +227,9 @@ typedef struct spaceship
     bool wantShoot;
 } ship;
 
+ship player1_ship;
+ship player2_ship;
+
 #define ship_size 5
 #define frame_rate 60
 #define timer_frequency 100000000
@@ -243,6 +246,14 @@ typedef struct physics_holder{
     int hitbox_num;
 } physics_holder;
 
+bool player_collide(int x, int y, ship *player){
+    if(x > player->x && x < player->x + player->size){
+        if(y > player->y && y < player->y + player->size){
+            return true;
+        }
+    }
+    return false;
+}
 
 void handle_ship_physics(ship *player_ship){
     // check collisions of ship, stop movement in that direction if it will collide
@@ -312,7 +323,7 @@ void handle_ship_physics(ship *player_ship){
 typedef struct bullet{
     int x;
     int y;
-    int dx;
+    int dx;     
     int dy;
     int damage;
     int speed;
@@ -321,6 +332,7 @@ typedef struct bullet{
     int bounce_count;
     bool wall_pen;
     struct bullet* next;
+    ship *source_player;
 }bullet;
 
 typedef struct bullet_linked_list{
@@ -412,6 +424,7 @@ void destroy_bullet(bullet* deleting_bullet){
 void update_bullets(){
     bullet *current_bullet = bullet_list.head;
     bool is_tail = false;
+
     while(current_bullet != NULL && !is_tail){
        // move bullet in space
         // X Direction
@@ -420,7 +433,7 @@ void update_bullets(){
         int y_offset = 0;
         bool y_collide = false;
         bool player_hit = false;
-
+        ship *opposing_player = (current_bullet->source_player == &player1_ship) ? &player2_ship : &player1_ship;
         if(current_bullet->dx > 0){
             x_offset = current_bullet->size;
         }
@@ -439,7 +452,9 @@ void update_bullets(){
                 y_c < current_bullet->y + current_bullet->size; 
                 y_c++){
                     // insert player checks here, BEFORE checking wall hit
-
+                    if(player_collide(x_c, y_c, opposing_player)){
+                        player_hit = true;
+                    }
                     if(current_bullet->x > x_min_threshold
                     && current_bullet->x < x_max_threshold
                     && collision_frame[current_bullet->x + x_offset + (current_bullet->dx)][y_c]){
@@ -471,6 +486,9 @@ void update_bullets(){
                 x_c < current_bullet->x + current_bullet->size; 
                 x_c++){
                     // insert player checks here, BEFORE checking wall hit.
+                    if(player_collide(x_c, y_c, opposing_player)){
+                        player_hit = true;
+                    }
                     if(current_bullet->y > y_min_threshold
                     && current_bullet->y < y_max_threshold
                     && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
@@ -486,6 +504,10 @@ void update_bullets(){
 
         if(player_hit){
             // damage player THEN destroy bullet
+            opposing_player->health -= current_bullet->damage;
+            printf("PLAYER HIT: Destroy bullet at addr %d, t = %d\n", current_bullet, frame_count);
+            printf("HIT PLAYER %d\n", ((opposing_player == &player1_ship) ? 1 : 2));
+            destroy_bullet(current_bullet);
         }else if(x_collide || y_collide){
             // bullet collided with wall!
 
@@ -548,7 +570,8 @@ void shoot(ship *player){
             new_bullet->speed = 2;
             new_bullet->size = 4;
             new_bullet->bounce_count = 3;
-            printf("shooting! %d bullets atm. t = %d\n", num_bullets, frame_count);
+            new_bullet->source_player = player;
+            printf("shooting! %d bullets by P%d atm. t = %d\n", num_bullets, (((player == &player1_ship) ? 1 : 2)), frame_count);
         }
     }else{
         // cant shoot, weird scenario made in case
@@ -578,11 +601,8 @@ const int minimum_ring_x = 80;
 const int minimum_ring_y = 60;
 int ring_initial_delay = 120;
 
-bool player_collide(int x, int y, ship *player){
-    if(x > player->x || x < player->x + player->size){
 
-    }
-}
+
 
 void ring_update(){
     if(frame_count > ring_initial_delay && (frame_count%shrink_delay) == 0){
@@ -735,7 +755,6 @@ int main(void){
     timer_ptr->start_high_value = ((timer_frequency/frame_rate) >> 16);
     timer_ptr->control = 0b0110;
 
-    ship player1_ship;
     player1_ship.x = 50;
     player1_ship.y = 50;
     player1_ship.fire_rate = 5;
@@ -743,7 +762,6 @@ int main(void){
     player1_ship.canShoot = false;
     player1_ship.size = ship_size;
     
-    ship player2_ship;
     player2_ship.x = 150;
     player2_ship.y = 150;
     player2_ship.fire_rate = 5;
@@ -767,8 +785,8 @@ int main(void){
         frame_count++;
         // VGA ERASING OLD POSITIONS
 		// erase old boxes
-		draw_box(player1_ship.old_x, player1_ship.old_y, ship_size, ship_size, 0);
-		draw_box(player2_ship.old_x, player2_ship.old_y, ship_size, ship_size, 0);
+		draw_box(player1_ship.old_x, player1_ship.old_y, player1_ship.size, player1_ship.size, 0);
+		draw_box(player2_ship.old_x, player2_ship.old_y, player2_ship.size, player2_ship.size, 0);
         
         // drawing hitboxes
         if(h_drawn < 2){
@@ -831,18 +849,32 @@ int main(void){
                     for(int y_c = 0; y_c < VGA_y; y_c++){
                         // if the coordinate is OUTSIDE of ring, set to true!
                         if(x_c < (ring_center_x - ring_x) || x_c > (ring_center_x + ring_x)){
-                            // out of ring, set to true!
-                            if(collision_frame[x_c][y_c]){
-                                plot_pixel(x_c, y_c, color_list[6]);
-
+                            if(y_c > ring_center_y - ring_y - shrink_vert_rate || y_c < ring_center_y - ring_y){
+                                // out of ring, set to true!
+                                if(collision_frame[x_c][y_c]){
+                                    plot_pixel(x_c, y_c, color_list[6]);
+                                }
+                            }
+                            if(y_c < ring_center_y + ring_y + shrink_vert_rate || y_c < ring_center_y + ring_y){
+                                // out of ring, set to true!
+                                if(collision_frame[x_c][y_c]){
+                                    plot_pixel(x_c, y_c, color_list[6]);
+                                }
                             }
                         }
                         if(y_c < (ring_center_y - ring_y) || y_c > (ring_center_x + ring_y)){
-                            // out of ring, set to true!
-                            if(collision_frame[x_c][y_c]){
-                                plot_pixel(x_c, y_c, color_list[6]);
-
-                            }       
+                            if(x_c > ring_center_x - ring_x - shrink_hori_rate || x_c < ring_center_x - ring_x){
+                                // out of ring, set to true!
+                                if(collision_frame[x_c][y_c]){
+                                    plot_pixel(x_c, y_c, color_list[6]);
+                                }
+                            }
+                            if(x_c < ring_center_x + ring_x + shrink_hori_rate || x_c < ring_center_x + ring_x){
+                                // out of ring, set to true!
+                                if(collision_frame[x_c][y_c]){
+                                    plot_pixel(x_c, y_c, color_list[6]);
+                                }
+                            }
                         }
                     }
                 }
@@ -866,8 +898,8 @@ int main(void){
 
 		// draw new boxes at shifted positions
         //int colour_index = abs(player1_ship.orientationX) + abs((player1_ship.orientationY << 1)) + 1;
-		draw_box(player1_ship.x, player1_ship.y, ship_size, ship_size, color_list[2]);
-        draw_box(player2_ship.x, player2_ship.y, ship_size, ship_size, color_list[7]);
+		draw_box(player1_ship.x, player1_ship.y, player1_ship.size, player1_ship.size, color_list[2]);
+        draw_box(player2_ship.x, player2_ship.y, player2_ship.size, player2_ship.size, color_list[7]);
         // output data onto LEDS
         for(int k = 0; k < inputs_per_player; k++){
             if(p1_keyboard.directions[k]){
