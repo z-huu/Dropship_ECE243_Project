@@ -87,6 +87,11 @@ void handle_physics(int* x_box, int* y_box, int* dx, int* dy, int N, int speed,
 
 void draw_box(int x, int y, int x_size, int y_size, short int color);
 
+// GLOBALS
+int num_bullets = 0;
+int frame_count = 0;
+#define bullet_size 5
+#define pixel_step 2
 
 // TIMER DECLARATION
 struct timer{
@@ -254,10 +259,9 @@ typedef struct physics_holder{
     int hitbox_num;
 } physics_holder;
 
-bool player_collide(int x, int y, ship *player){
-    if((x >= player->x - player->size && x <= player->x + player->size)){
-        printf("in X\n");
-        if((y >= player->y - player->size && y <= player->y + player->size)){
+bool player_collide(int x_c, int y_c, ship *plr){
+    if(x_c >= plr->x && x_c <= plr->x + plr->size){
+        if(y_c >= plr->y && y_c <= plr->y + plr->size){
             return true;
         }
     }
@@ -340,6 +344,7 @@ void handle_ship_physics(ship *player_ship){
         }
     }
 
+    // check ring status of player
     if(in_ring){
         player_ship->ring_timer = (player_ship->ring_timer > 0) ? player_ship->ring_timer - 1 : ring_rate;
     }else{
@@ -350,6 +355,8 @@ void handle_ship_physics(ship *player_ship){
 typedef struct bullet{
     int x;
     int y;
+    int old_x;
+    int old_y;
     int dx;     
     int dy;
     int damage;
@@ -369,11 +376,7 @@ typedef struct bullet_linked_list{
 }bullet_linked_list;
 
 bullet_linked_list bullet_list;
-int num_bullets = 0;
-int total_bullet_memory = 10;
-int frame_count = 0;
-#define bullet_size 5
-#define pixel_step 2
+
 // Inserts bullet into head of linked list
 bullet* create_bullet(){
     //create the bullet
@@ -460,8 +463,6 @@ void damage_player(ship *player, int damage){
     }
 }
 
-
-
 void update_bullets(){
     bullet *current_bullet = bullet_list.head;
     bool is_tail = false;
@@ -475,13 +476,16 @@ void update_bullets(){
         bool y_collide = false;
         bool player_hit = false;
         
+        current_bullet->old_x = current_bullet->x;
+        current_bullet->old_y = current_bullet->y;
+
         ship *opposing_player = (current_bullet->source_player == &player1_ship) ? &player2_ship : &player1_ship;
         if(current_bullet->dx > 0){
             x_offset = current_bullet->size;
         }
 
         // HORIZONTAL MOVEMENT
-
+        
         if(current_bullet->x + current_bullet->speed * current_bullet->dx > x_min_threshold 
         && current_bullet->x + current_bullet->speed * current_bullet->dx < x_max_threshold - current_bullet->size){
             // x_c will be the distance we have travelled so far
@@ -490,12 +494,12 @@ void update_bullets(){
             x_c += pixel_step){
                 // scan the ship's height, each horizontal pixel step
                 for(int y_c = current_bullet->y; 
-                y_c < current_bullet->y + current_bullet->size; 
+                y_c < current_bullet->y + current_bullet->size && !player_hit && !x_collide; 
                 y_c++){
                     // insert player checks here, BEFORE checking wall hit
-                    if(player_collide(x_c, y_c, opposing_player)){
+                    player_hit = player_hit || player_collide(current_bullet->x + x_offset + current_bullet->dx, y_c, opposing_player);
+                    if(player_hit){
                         printf("t = %d. PLR HIT X\n", frame_count);
-                        player_hit = true;
                     }else if(current_bullet->x > x_min_threshold
                             && current_bullet->x < x_max_threshold
                             && collision_frame[current_bullet->x + x_offset + (current_bullet->dx)][y_c]){
@@ -523,12 +527,12 @@ void update_bullets(){
             y_c += pixel_step){
                 // scan the ship's length, each vertical pixel step
                 for(int x_c = current_bullet->x; 
-                x_c < current_bullet->x + current_bullet->size; 
+                x_c < current_bullet->x + current_bullet->size && !player_hit && !y_collide; 
                 x_c++){
                     // insert player checks here, BEFORE checking wall hit.
-                    if(player_collide(x_c, y_c, opposing_player)){
+                    player_hit = player_hit || player_collide(x_c, current_bullet->y + y_offset + current_bullet->dy, opposing_player);
+                    if(player_hit){
                         printf("t = %d. PLR HIT Y\n", frame_count);
-                        player_hit = true;
                     } else if(current_bullet->y > y_min_threshold
                             && current_bullet->y < y_max_threshold
                             && collision_frame[x_c][current_bullet->y + y_offset + (current_bullet->dy)]){
@@ -954,42 +958,6 @@ int main(void){
                         plot_pixel(x_max_threshold, y_c, color_list[6]);
                     }
                 }
-                
-                /*
-                for(int x_c = 0; x_c < VGA_x; x_c++){
-                    for(int y_c = 0; y_c < VGA_y; y_c++){
-                        // if the coordinate is OUTSIDE of ring, set to true!
-                        if(x_c == (ring_center_x - ring_x) || x_c == (ring_center_x + ring_x)){
-                            if(y_c == ring_center_y - ring_y - shrink_vert_rate || y_c == ring_center_y - ring_y){
-                                // out of ring, set to true!
-                                if(collision_frame[x_c][y_c]){
-                                    plot_pixel(x_c, y_c, color_list[6]);
-                                }
-                            }
-                            if(y_c == ring_center_y + ring_y + shrink_vert_rate || y_c == ring_center_y + ring_y){
-                                // out of ring, set to true!
-                                if(collision_frame[x_c][y_c]){
-                                    plot_pixel(x_c, y_c, color_list[6]);
-                                }
-                            }
-                        }
-                        if(y_c == (ring_center_y - ring_y) || y_c == (ring_center_x + ring_y)){
-                            if(x_c == ring_center_x - ring_x - shrink_hori_rate || x_c == ring_center_x - ring_x){
-                                // out of ring, set to true!
-                                if(collision_frame[x_c][y_c]){
-                                    plot_pixel(x_c, y_c, color_list[6]);
-                                }
-                            }
-                            if(x_c == ring_center_x + ring_x + shrink_hori_rate || x_c == ring_center_x + ring_x){
-                                // out of ring, set to true!
-                                if(collision_frame[x_c][y_c]){
-                                    plot_pixel(x_c, y_c, color_list[6]);
-                                }
-                            }
-                        }
-                    }
-                }
-                */
             }
         }
         // drawing bullets out
