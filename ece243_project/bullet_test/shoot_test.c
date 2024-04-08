@@ -90,8 +90,13 @@ void draw_box(int x, int y, int x_size, int y_size, short int color);
 // GLOBALS
 int num_bullets = 0;
 int frame_count = 0;
-#define bullet_size 5
+
 #define pixel_step 2
+
+#define x_min_threshold 5
+#define y_min_threshold 5
+#define x_max_threshold 315
+#define y_max_threshold 235
 
 // TIMER DECLARATION
 struct timer{
@@ -216,6 +221,81 @@ volatile int *LEDs = (int*) 0xff200000;
 volatile int *HEX_0 = (int*) 0xFF200020;
 volatile int *HEX_5 = (int*) 0xFF200030;
 
+typedef struct powerup{
+    int x;
+    int y;
+    int buff_fire_rate;
+    int speed_buff;
+    int bullet_speed;
+    int duration;
+    int dmg_buff;
+    struct powerup* prev;
+    struct powerup* next;
+}powerup;
+
+typedef struct powerup_linked_list{
+    int num;
+    powerup* head;
+}powerup_linked_list;
+
+powerup_linked_list powerup_list;
+
+#define powerup_spawn_rate 160
+#define powerup_size 5
+
+powerup* create_powerup(){
+    //create the powerup
+    powerup *new_buff = (powerup*) malloc(sizeof(powerup));
+    powerup *current_buff;
+    int k = 0;
+
+    if(new_buff){
+        powerup_list.head->prev = new_buff;
+        new_buff->next = powerup_list.head;
+        powerup_list.head = new_buff;
+        powerup_list.num++;
+        //printf("t = %d. ALLOCATED new buff at addr %d. Next addr %d \n", frame_count, new_buff, new_buff->next);
+
+        // set up
+
+        return new_buff;
+    }
+    // if here, one of the allocations failed, so give a null ptr
+    return NULL;
+}
+
+// can certainly be optimized
+void destroy_powerup(powerup* deleting_powerup){
+    // check if list is empty to begin with
+    if(powerup_list.head == NULL){
+        return;
+    }   
+
+    // avoid freeing NULL address
+    if(deleting_powerup == NULL){
+        return;
+    }
+
+    // check if deleting bullet is the head...
+    if(powerup_list.head == deleting_powerup){
+        powerup_list.head = deleting_powerup->next;
+        //printf("t = %d. FREEING BULLET HEAD at addr %d. \n", frame_count, deleting_bullet);
+        //printf("^ Prev Bullet Addr: %d. Next Bullet Addr: %d. \n", frame_count, 0, deleting_bullet->next);
+        free(deleting_powerup);
+        powerup_list.num--;
+        return;
+    }
+
+    deleting_powerup->prev->next = deleting_powerup->next;
+    deleting_powerup->next->prev = deleting_powerup->prev;
+
+    //printf("t = %d. FREEING BULLET at addr %d.\n", frame_count, deleting_bullet);
+    //printf("^ Prev Bullet Addr: %d. Next Bullet Addr: %d.\n", frame_count, deleting_bullet->prev, deleting_bullet->next);
+    powerup_list.num--;
+    free(deleting_powerup);
+    return;
+}
+
 typedef struct spaceship
 {
     int x;
@@ -224,16 +304,26 @@ typedef struct spaceship
     int old_y;
     int dx;
     int dy;
+
     int orientationX;
     int orientationY;
+    
     int health;
+    
     int fire_rate;
     int frame_count;
+    
     int size;
     int input_buffer;
+    
     int ring_timer;
+    
+    int ship_speed;
+    int powerup_time;
+    int bullet_speed;
+    int bullet_dmg;
+    int bullet_bounce_count;
     bool canShoot;
-    bool wantShoot;
 } ship;
 
 ship player1_ship;
@@ -242,22 +332,26 @@ ship player2_ship;
 #define ship_size 5
 #define frame_rate 60
 #define timer_frequency 100000000
-#define ship_speed 2
-#define x_min_threshold 5
-#define y_min_threshold 5
-#define x_max_threshold 315
-#define y_max_threshold 235
+
+#define base_ship_speed 1
+#define base_bullet_speed 1
+#define base_fire_rate 30
+#define base_bullet_damage 10
+#define base_bounce_count 3
+
 #define ship_initial_hp 50
 #define OOB_time 300
 #define ring_dmg 5
 #define ring_rate 30
 
-typedef struct physics_holder{
-    ship *ship_array;
-    int ship_num;
-    hitbox *hitbox_array;
-    int hitbox_num;
-} physics_holder;
+#define powerup_duration 150
+#define buffed_fire_rate 10
+#define buffed_ship_speed 4
+#define buffed_bullet_speed 15
+#define buffed_bullet_dmg 20
+#define buffed_bounce_count 6
+
+#define bullet_size 4
 
 bool player_collide(int x_c, int y_c, ship *plr){
     if(x_c >= plr->x && x_c <= plr->x + plr->size){
@@ -281,12 +375,13 @@ void handle_ship_physics(ship *player_ship){
     }else if(player_ship->dx == 0){
         x_collide = true;
     }
-    
-    if(player_ship->x + ship_speed * player_ship->dx > x_min_threshold 
-    && player_ship->x + ship_speed * player_ship->dx < x_max_threshold - ship_size - 1){
+    powerup* currentBuff;
+
+    if(player_ship->x + player_ship->ship_speed * player_ship->dx > x_min_threshold 
+    && player_ship->x + player_ship->ship_speed * player_ship->dx < x_max_threshold - ship_size - 1){
         // x_c will be the distance we have travelled so far
         for(int x_c = 0; 
-        x_c < ship_speed && !x_collide; 
+        x_c < player_ship->ship_speed && !x_collide; 
         x_c++){
             // scan the ship's height, each horizontal pixel step
             for(int y_c = player_ship->y; 
@@ -303,6 +398,22 @@ void handle_ship_physics(ship *player_ship){
                         x_collide = true;
                         player_ship->x -= player_ship->dx;
                     }
+
+                    // check powerup pickups
+                    currentBuff = powerup_list.head;
+                    while(currentBuff != NULL){
+                        for(int k = 0; k < powerup_size; k++){
+                            for(int j = 0; j < powerup_size; j++){
+                                if(player_collide(currentBuff->x + k, currentBuff->y + j, player_ship)){
+                                    // player has collected powerup, delete it
+                                    apply_powerup(currentBuff, player_ship);
+                                    destroy_powerup(currentBuff);
+                                }
+                                currentBuff = currentBuff->next;
+                            }
+                        }
+                        
+                    }
                 }
             }
             player_ship->x += player_ship->dx;
@@ -317,12 +428,12 @@ void handle_ship_physics(ship *player_ship){
         y_collide = true;
     }
 
-    if(player_ship->y + ship_speed * player_ship->dy > y_min_threshold 
-    && player_ship->y + ship_speed * player_ship->dy < y_max_threshold - ship_size - 1){
+    if(player_ship->y + player_ship->ship_speed * player_ship->dy > y_min_threshold 
+    && player_ship->y + player_ship->ship_speed * player_ship->dy < y_max_threshold - ship_size - 1){
         bool y_collide = false;
         // y_c will be the distance we have travelled so far
         for(int y_c = 0; 
-        y_c < ship_speed && !y_collide; 
+        y_c < player_ship->ship_speed && !y_collide; 
         y_c++){
             // scan the ship's length, each vertical pixel step
             for(int x_c = player_ship->x; 
@@ -491,7 +602,7 @@ void update_bullets(){
             // x_c will be the distance we have travelled so far
             for(int x_c = 0; 
             x_c < current_bullet->speed && !x_collide && !player_hit && current_bullet->dx != 0; 
-            x_c += pixel_step){
+            x_c = x_c + pixel_step){
                 // scan the ship's height, each horizontal pixel step
                 for(int y_c = current_bullet->y; 
                 y_c < current_bullet->y + current_bullet->size && !player_hit && !x_collide; 
@@ -524,7 +635,7 @@ void update_bullets(){
             // y_c will be the distance we have travelled so far
             for(int y_c = 0; 
             y_c < current_bullet->speed && !y_collide && !player_hit && current_bullet->dy != 0; 
-            y_c += pixel_step){
+            y_c = y_c + pixel_step){
                 // scan the ship's length, each vertical pixel step
                 for(int x_c = current_bullet->x; 
                 x_c < current_bullet->x + current_bullet->size && !player_hit && !y_collide; 
@@ -584,17 +695,6 @@ void update_bullets(){
     //printf("done bullets\n");
 }
 
-/*
-void clear_bullet_array(){
-    bullet *current_bullet = bullet_list.head;
-    while(current_bullet != NULL){
-        free(current_bullet);
-    }
-    num_bullets = 0;
-    bullet_list.num = 0;
-}
-*/
-
 const int shoot_buffer = 3;
 
 void shoot(ship *player){
@@ -608,16 +708,20 @@ void shoot(ship *player){
                 player->input_buffer = 0;
                 player->canShoot = false;
                 bullet* new_bullet = create_bullet();
-                new_bullet->x = player->x;
-                new_bullet->y = player->y;
-                new_bullet->dx = player->orientationX;
-                new_bullet->dy = player->orientationY;
-                new_bullet->damage = 10;
-                new_bullet->life_time = 120;
-                new_bullet->speed = 2;
-                new_bullet->size = 4;
-                new_bullet->bounce_count = 3;
-                new_bullet->source_player = player;
+                if(new_bullet){
+                    new_bullet->x = player->x;
+                    new_bullet->y = player->y;
+                    new_bullet->dx = player->orientationX;
+                    new_bullet->dy = player->orientationY;
+                    new_bullet->damage = player->bullet_dmg;
+                    new_bullet->life_time = 120;
+                    new_bullet->speed = player->bullet_speed;
+                    new_bullet->size = bullet_size;
+                    new_bullet->bounce_count = player->bullet_bounce_count;
+                    new_bullet->source_player = player;
+                }
+                
+
                 //printf("t = %d. shooting! %d bullets by P%d atm\n", frame_count, num_bullets, (((player == &player1_ship) ? 1 : 2)));
             }else{
                 player->input_buffer++;
@@ -638,18 +742,36 @@ void update_ship_on_frame(ship *player){
         player->frame_count++;
         player->canShoot = false;
     }
+    if(player->powerup_time > 0){
+        player->powerup_time--;
+    }else{
+        player->fire_rate = base_fire_rate;
+        player->ship_speed = base_ship_speed;
+        player->bullet_speed = base_bullet_speed;
+        player->bullet_dmg = base_bullet_damage;
+        player->bullet_bounce_count = base_bounce_count;
+    }
 }
 
-int shrink_hori_rate = 4;
-int shrink_vert_rate = 3;
-int shrink_delay = 20;
+void apply_powerup(powerup *buff, ship *plr){
+    plr->powerup_time = buff->duration;
+    plr->fire_rate = buff->buff_fire_rate;
+    plr->ship_speed = buff->speed_buff;
+    plr->bullet_speed = buff->bullet_speed;
+    plr->bullet_dmg = buff->dmg_buff;
+}
+
+#define shrink_hori_rate 4
+#define shrink_vert_rate 3
+#define shrink_delay 20
+#define minimum_ring_x 80
+#define minimum_ring_y 60
+#define ring_initial_delay 120
+
 int ring_x = 320/2;
 int ring_y = 240/2;
 int ring_center_x = 320/2; // to be randomized to be centered at a random pt, b/n 110-230 (ie midpt = 170, range of 60)
 int ring_center_y = 240/2; // to be randomized to be centered at a random pt, b/n 80-160 (midpt = 120, range of 40)
-const int minimum_ring_x = 80; 
-const int minimum_ring_y = 60;
-int ring_initial_delay = 120;
 
 
 void ring_update(){
@@ -663,29 +785,6 @@ void ring_update(){
             // vertical shrink rate determined by shrink_vert_rate
             ring_x = (ring_x - shrink_hori_rate > minimum_ring_x) ? ring_x - shrink_hori_rate : minimum_ring_x;
             ring_y = (ring_y - shrink_vert_rate > minimum_ring_y) ? ring_y - shrink_vert_rate : minimum_ring_y;
-            
-            /*
-            // horizontal edges
-            for(int x_c = ring_center_x - ring_x - shrink_hori_rate; x_c < ring_center_x + ring_x + shrink_hori_rate; x_c++){
-                if(ring_center_y - ring_y > 0){
-                    collision_frame[x_c][ring_center_y - ring_y] = true;
-                }
-                if(ring_center_y + ring_y > VGA_y){
-                    collision_frame[x_c][ring_center_y + ring_y] = true;
-                }
-            }
-
-            // vertical edges
-            for(int y_c = ring_center_y - ring_y - shrink_vert_rate; y_c < ring_center_y + ring_y + shrink_vert_rate; y_c++){
-                if(ring_center_x - ring_x > 0){
-                    collision_frame[ring_center_x - ring_x][y_c] = true;
-                }
-                if(ring_center_x + ring_x > VGA_x){
-                    collision_frame[ring_center_x + ring_x][y_c] = true;
-                }
-            }
-            */
-            
             // apply ring changes onto collision frame!
             for(int x_c = 0; x_c < VGA_x; x_c++){
                 for(int y_c = 0; y_c < VGA_y; y_c++){
@@ -826,7 +925,6 @@ int main(void){
 
     player1_ship.x = 50;
     player1_ship.y = 50;
-    player1_ship.fire_rate = 5;
     player1_ship.frame_count = 0;
     player1_ship.canShoot = false;
     player1_ship.size = ship_size;
@@ -834,15 +932,28 @@ int main(void){
     player1_ship.ring_timer = OOB_time;
     player1_ship.health = ship_initial_hp;
 
+    player1_ship.fire_rate = base_fire_rate;
+    player1_ship.ship_speed = base_ship_speed;
+    player1_ship.bullet_bounce_count = base_bounce_count;
+    player1_ship.powerup_time = 0;
+    player1_ship.bullet_dmg = base_bullet_damage;
+    player1_ship.bullet_speed = base_bullet_speed;
+
     player2_ship.x = 150;
     player2_ship.y = 150;
-    player2_ship.fire_rate = 5;
     player2_ship.frame_count = 0;
     player2_ship.canShoot = false;
     player2_ship.size = ship_size;
     player2_ship.input_buffer = 0;
     player2_ship.ring_timer = OOB_time;
     player2_ship.health = ship_initial_hp;
+
+    player2_ship.fire_rate = base_fire_rate;
+    player2_ship.ship_speed = base_ship_speed;
+    player2_ship.bullet_bounce_count = base_bounce_count;
+    player2_ship.powerup_time = 0;
+    player2_ship.bullet_dmg = base_bullet_damage;
+    player2_ship.bullet_speed = base_bullet_speed;
 
     int h_drawn = 0;
     
