@@ -130,9 +130,10 @@ static const int shipDownLeft[] = {
 int pixel_buffer_start;
 
 void draw_ship(ship *player);
-void draw_bullet(bullet *bullet, int radius);
-void bullet_helper(int xc, int yc, int x, int y);
+void draw_bullet(bullet *bullet);
+void bullet_helper(int xc, int yc, int x, int y, int color);
 void draw_line(int, int, int, int, int);
+void erase_bullet(bullet* bullet);
 
 void clear_screen();
 int counter = 0;
@@ -141,35 +142,105 @@ void draw_pixel(int x, int y, short int line_color)
     *(volatile short int *)(pixel_buffer_start + (y << 10) + (x << 1)) = line_color;
 }
 
+int Buffer1[260][516];
+int Buffer2[260][516];
+
+
+void wait_for_vsync(void)
+{
+    volatile int *pixel_ctrl_ptr = (int *)PIXEL_BUF_CTRL_BASE;
+    int bufferStatusBit;
+    *(pixel_ctrl_ptr) = 1;                         // Write 1 into buffer register, causing a frame buffer swap.
+    bufferStatusBit = *(pixel_ctrl_ptr + 3) << 31; // isolates S bit
+    // implementing v-sync (waiting for S bit to go low)
+    while (bufferStatusBit != 0)
+    {
+        bufferStatusBit = *(pixel_ctrl_ptr + 3) << 31;
+    }
+}
+
 int main()
 {
-
-    // Sprite currently has height 90, width 80. Print by row.
     volatile int *pixel_ctrl_ptr = (int *)PIXEL_BUF_CTRL_BASE; // pixel controller
 
-    /* Read location of the pixel buffer from the pixel buffer controller */
+    *(pixel_ctrl_ptr + 1) = (int)&Buffer1; // first store the address in the  back buffer
+
+    /* now, swap the front/back buffers, to set the front buffer location */
+
+    wait_for_vsync();
+
+    /* initialize a pointer to the pixel buffer, used by drawing functions */
+
     pixel_buffer_start = *pixel_ctrl_ptr;
-    clear_screen();
 
-    // Set up a demo with a moveable ship.
-    ship *playerOne = malloc(sizeof(ship));
-    playerOne->x = 50;
-    playerOne->y = 50;
-    playerOne->dx = 0;
-    playerOne->dy = 1;
+    clear_screen(); // pixel_buffer_start points to the pixel buffer
 
-    draw_ship(playerOne);
+    /* set back pixel buffer to Buffer 2 */
 
-    bullet *bulletOne = malloc(sizeof(bullet));
+    *(pixel_ctrl_ptr + 1) = (int)&Buffer2;
+
+    pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
+    clear_screen();                             // pixel_buffer_start points to the pixel buffer
+
+
+    bullet *bulletOne;
     bulletOne->x = 100;
-    bulletOne->y = 100;
+    bulletOne->oldx = 0;
+        bulletOne->prevx = 0;
 
-    draw_bullet(bulletOne, BULLET_RADIUS);
+    bulletOne->y = 190;
+    bulletOne->oldy = 0;
+        bulletOne->prevx = 0;
 
-    bullet *bulletTwo = malloc(sizeof(bullet));
+    bulletOne->dx = 1;
+    bulletOne->dy = 0;
+
+
+    bullet *bulletTwo;
     bulletTwo->x = 140;
+    bulletTwo->oldx = 0;
     bulletTwo->y = 100;
-    draw_bullet(bulletTwo, BULLET_RADIUS - 2);
+    bulletTwo->oldy =  0;
+    bulletTwo->dx = -1;
+    bulletTwo->dy = 0;
+
+    while (1) {
+
+
+        bulletOne->x += bulletOne->dx;
+        if (bulletOne->x > 319 || bulletOne->x < 0) {
+            bulletOne->dx *= -1;
+            bulletOne->x += 2*bulletOne->dx;
+        }
+        bulletTwo->x += bulletTwo->dx;
+        if (bulletTwo->x > 320 || bulletTwo->x < 0) {
+            bulletTwo->dx *= -1;
+            bulletTwo->x += 2*bulletTwo->dx;
+        }
+
+        erase_bullet(bulletOne);
+        erase_bullet(bulletTwo);
+
+
+        draw_bullet(bulletOne);
+        draw_bullet(bulletTwo);
+
+        wait_for_vsync();
+        pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
+
+        bulletOne->oldx = bulletOne->prevx;
+        bulletOne->oldy = bulletOne->prevy;
+
+        bulletOne->prevx = bulletOne->x;
+        bulletOne->prevy = bulletOne->y;
+
+        bulletTwo->oldx = bulletTwo->prevx;
+        bulletTwo->oldy = bulletTwo->prevy;
+
+        bulletTwo->prevx = bulletTwo->x;
+        bulletTwo->prevy = bulletTwo->y;
+        
+    }
 }
 
 void draw_ship(ship *player)
@@ -316,16 +387,16 @@ void draw_ship(ship *player)
 
 // implement this circle drawing algorithm
 // https://uomustansiriyah.edu.iq/media/lectures/12/12_2020_06_26!11_47_57_PM.pdf
-void draw_bullet(bullet *bullet, int radius)
+void draw_bullet(bullet *bullet)
 {
 
-    int xc = bullet->x;
-    int yc = bullet->y;
-    int r = radius;
+    int xc = bullet->x + BULLET_RADIUS/2;
+    int yc = bullet->y + BULLET_RADIUS/2;
+    int r = BULLET_RADIUS;
 
     int x = 0, y = r;
     int d = 3 - 2 * r;
-    bullet_helper(xc, yc, x, y);
+    bullet_helper(xc, yc, x, y, 1);
     while (y >= x)
     {
         // for each pixel we will
@@ -343,16 +414,49 @@ void draw_bullet(bullet *bullet, int radius)
         }
         else
             d = d + 4 * x + 6;
-        bullet_helper(xc, yc, x, y);
+        bullet_helper(xc, yc, x, y, 1);
     }
 
     // For drawing the shine
-    draw_pixel(xc - (radius / 2), yc - (radius / 2), WHITE);
-    draw_pixel(xc - 1 - (radius / 2), yc + 1 - (radius / 2), WHITE);
+    draw_pixel(xc - (BULLET_RADIUS / 2), yc - (BULLET_RADIUS / 2), WHITE);
+    draw_pixel(xc - 1 - (BULLET_RADIUS/ 2), yc + 1 - (BULLET_RADIUS / 2), WHITE);
 }
 
-void bullet_helper(int xc, int yc, int x, int y)
+void erase_bullet(bullet *bullet)
 {
+
+    int xc = bullet->oldx + BULLET_RADIUS/2;
+    int yc = bullet->oldy + BULLET_RADIUS/2;
+    int r = BULLET_RADIUS;
+
+    int x = 0, y = r;
+    int d = 3 - 2 * r;
+    bullet_helper(xc, yc, x, y, 0);
+    while (y >= x)
+    {
+        // for each pixel we will
+        // draw all eight pixels
+
+        x++;
+
+        // check for decision parameter
+        // and correspondingly
+        // update d, x, y
+        if (d > 0)
+        {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        }
+        else
+            d = d + 4 * x + 6;
+        bullet_helper(xc, yc, x, y, 0);
+    }
+
+}
+
+void bullet_helper(int xc, int yc, int x, int y, int color)
+{
+    if (color != 0) {
     // draw_pixel(xc+x, yc+y, YELLOW);
     draw_line(xc + x, yc + y, xc - x, yc + y, YELLOW);
     // draw_pixel(xc-x, yc+y, YELLOW);
@@ -369,6 +473,25 @@ void bullet_helper(int xc, int yc, int x, int y)
     draw_line(xc + y, yc - x, xc - y, yc - x, YELLOW);
     // draw_pixel(xc-y, yc-x, YELLOW);
     draw_line(xc - y, yc - x, xc + y, yc - x, YELLOW);
+    } else {
+         // draw_pixel(xc+x, yc+y, YELLOW);
+    draw_line(xc + x, yc + y, xc - x, yc + y, 0);
+    // draw_pixel(xc-x, yc+y, YELLOW);
+    draw_line(xc - x, yc - y, xc + x, yc - y, 0);
+    // draw_pixel(xc+x, yc-y, YELLOW);
+    draw_line(xc + x, yc - y, xc - x, yc - y, 0);
+    // draw_pixel(xc-x, yc-y, 0);
+    draw_line(xc - x, yc - y, xc + x, yc - y, 0);
+    // draw_pixel(xc+y, yc+x, 0);
+    draw_line(xc + y, yc + x, xc - y, yc + x, 0);
+    // draw_pixel(xc-y, yc+x, 0);
+    draw_line(xc - y, yc + x, xc + y, yc + x, 0);
+    // draw_pixel(xc+y, yc-x, 0);
+    draw_line(xc + y, yc - x, xc - y, yc - x, 0);
+    // draw_pixel(xc-y, yc-x, 0);
+    draw_line(xc - y, yc - x, xc + y, yc - x, 0);
+    }
+   
 }
 
 void clear_screen(void)
