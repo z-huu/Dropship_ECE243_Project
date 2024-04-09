@@ -31,14 +31,7 @@ typedef struct projectile
 } bullet;
 
 // buffers to hold the different ship sprites.
-int shipUp[][];
-int shipUpLeft[][];
-int shipLeft[][];
-int shipDownLeft[][];
-int shipDown[][];
-int shipDownRight[][];
-int shipRight[][];
-int shipUpRight[][];
+    // In spriteTest.c 
 
 int titleScreen[][]; // buffer to hold title screen image
 int mapLayout[][][]; // buffer to hold the map layout aka obstacles
@@ -57,7 +50,7 @@ int direction_P2[4]; // up down left right in THAT ORDER
 #define WINNER_B 3
 
 void eraseShips(ship *shipA, ship *shipB);
-void eraseOldBullets(bullet *bulletArray);
+void eraseOldBullets(bullet **bulletArray);
 void handleCollisions(bullet *bulletArray, int ****mapLayout, ship *shipA, ship *shipB, int currentMap);
 void checkWinner(ship *shipA, ship *shipB);
 void updateShips(ship *shipA, ship *shipB, int* direction_P1, int* direction_P2);
@@ -106,4 +99,11 @@ int main()
     {
         // hi
     }
+
+}
+
+void drawBullet(int x, int y) {
+
+    // Implemented in spriteTest.c
+
 }
