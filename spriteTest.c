@@ -196,13 +196,7 @@ int main()
     bulletOne->dy = 0;
 
 
-    bullet *bulletTwo;
-    bulletTwo->x = 140;
-    bulletTwo->oldx = 0;
-    bulletTwo->y = 100;
-    bulletTwo->oldy =  0;
-    bulletTwo->dx = -1;
-    bulletTwo->dy = 0;
+    
 
     while (1) {
 
@@ -212,18 +206,12 @@ int main()
             bulletOne->dx *= -1;
             bulletOne->x += 2*bulletOne->dx;
         }
-        bulletTwo->x += bulletTwo->dx;
-        if (bulletTwo->x > 320 || bulletTwo->x < 0) {
-            bulletTwo->dx *= -1;
-            bulletTwo->x += 2*bulletTwo->dx;
-        }
+     
 
         erase_bullet(bulletOne);
-        erase_bullet(bulletTwo);
 
 
         draw_bullet(bulletOne);
-        draw_bullet(bulletTwo);
 
         wait_for_vsync();
         pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
@@ -234,11 +222,6 @@ int main()
         bulletOne->prevx = bulletOne->x;
         bulletOne->prevy = bulletOne->y;
 
-        bulletTwo->oldx = bulletTwo->prevx;
-        bulletTwo->oldy = bulletTwo->prevy;
-
-        bulletTwo->prevx = bulletTwo->x;
-        bulletTwo->prevy = bulletTwo->y;
         
     }
 }
@@ -385,71 +368,51 @@ void draw_ship(ship *player)
     }
 }
 
-// implement this circle drawing algorithm
-// https://uomustansiriyah.edu.iq/media/lectures/12/12_2020_06_26!11_47_57_PM.pdf
+
 void draw_bullet(bullet *bullet)
 {
+    int x = bullet->x;
+    int y = bullet->y;
 
-    int xc = bullet->x + BULLET_RADIUS/2;
-    int yc = bullet->y + BULLET_RADIUS/2;
-    int r = BULLET_RADIUS;
+    for(int j = y; j < (y+5); j++) {
+        
+        draw_pixel(x+1, j, YELLOW);
+        draw_pixel(x+2, j, YELLOW);
+        draw_pixel(x+3, j, YELLOW);
 
-    int x = 0, y = r;
-    int d = 3 - 2 * r;
-    bullet_helper(xc, yc, x, y, 1);
-    while (y >= x)
-    {
-        // for each pixel we will
-        // draw all eight pixels
+        if (j != y && j != y+4) {
+            draw_pixel(x, j, YELLOW);
+            draw_pixel(x+4, j, YELLOW);
+            
+        } 
 
-        x++;
-
-        // check for decision parameter
-        // and correspondingly
-        // update d, x, y
-        if (d > 0)
-        {
-            y--;
-            d = d + 4 * (x - y) + 10;
+        if (j == y+1) {
+            draw_pixel(x+1, j, WHITE);
         }
-        else
-            d = d + 4 * x + 6;
-        bullet_helper(xc, yc, x, y, 1);
+        
     }
-
-    // For drawing the shine
-    draw_pixel(xc - (BULLET_RADIUS / 2), yc - (BULLET_RADIUS / 2), WHITE);
-    draw_pixel(xc - 1 - (BULLET_RADIUS/ 2), yc + 1 - (BULLET_RADIUS / 2), WHITE);
+    
 }
 
 void erase_bullet(bullet *bullet)
 {
 
-    int xc = bullet->oldx + BULLET_RADIUS/2;
-    int yc = bullet->oldy + BULLET_RADIUS/2;
-    int r = BULLET_RADIUS;
+    int x = bullet->oldx;
+    int y = bullet->oldy;
 
-    int x = 0, y = r;
-    int d = 3 - 2 * r;
-    bullet_helper(xc, yc, x, y, 0);
-    while (y >= x)
-    {
-        // for each pixel we will
-        // draw all eight pixels
+    for(int j = y; j < (y+5); j++) {
+        
+        draw_pixel(x+1, j, 0);
+        draw_pixel(x+2, j, 0);
+        draw_pixel(x+3, j, 0);
 
-        x++;
+        if (j != y && j != y+4) {
+            draw_pixel(x, j, 0);
+            draw_pixel(x+4, j, 0);
+            
+        } 
 
-        // check for decision parameter
-        // and correspondingly
-        // update d, x, y
-        if (d > 0)
-        {
-            y--;
-            d = d + 4 * (x - y) + 10;
-        }
-        else
-            d = d + 4 * x + 6;
-        bullet_helper(xc, yc, x, y, 0);
+        
     }
 
 }
