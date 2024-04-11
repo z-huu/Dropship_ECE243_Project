@@ -15,6 +15,14 @@ takes one keyboard, using “WASD” for movement, and the arrow keys to fire in
 player’s health reaches 0, in which the game over screen appears, showcasing who won the round. The game can be replayed
 by pressing “1” on either keyboard.
 
+The entirety of the project is contained in the main.c file, and can be compiled in Intel's Monitor Program, or
+alternatively, a NIOS II simulator like Henry Wong's CPUlator (https://cpulator.01xz.net/?sys=nios-de1soc) 
+
+> [!WARNING]
+> Do note that trying to compile in simulators may cause issues with the size of the project; in this case, it may be
+> necessary to initialize one of the storage heavy arrays (sample or sprites) as a zero array instead. While this means
+> that specific sound / image won't be displayed in the game, you will still be able to see most of the project's functionality.
+
 ## Features
 
 Shown below is a list of all of the features incorporated in our project, as well as who was responsible for each feat.
