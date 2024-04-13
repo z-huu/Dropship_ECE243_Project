@@ -4,7 +4,7 @@
 
 Dropship is a competitive top-down shooter implemented using Intel's NIOS II soft processor on the DE1-SoC board. It was
 developed by Abhi Kupendiran and Zachary Hu as a final project for ECE243, a course on Computer Organization at the 
-University of Toronto. Two players duel each other in spaceships in an asteroid field, firing ricocheting bullets. As
+University of Toronto. Two players duel each other in spaceships in an asteroid field firing ricocheting bullets. As
 time progresses, the playable area gradually shrinks as a damaging ring closes in. 
 
 ## How to Play
